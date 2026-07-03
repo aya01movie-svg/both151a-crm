@@ -1,0 +1,14 @@
+{
+  "name": "both151'A CRM",
+  "short_name": "both151'A CRM",
+  "description": "飲食店向け顧客管理システム",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#f6f1e7",
+  "theme_color": "#16213e",
+  "lang": "ja",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

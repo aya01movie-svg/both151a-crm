@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/*
+  both151'A CRM デザイントークン
+  第20章・第34章「UIデザインルール」に準拠
+  背景: 白 / 薄いベージュ
+  アクセント: ネイビー / ゴールド
+  警告: オレンジ　期限切れ: 赤　成功: グリーン
+  角丸: 12px　ボタン高さ: 56px以上　文字サイズ: 16px以上
+*/
+
+:root {
+  --color-navy: #16213e;
+  --color-navy-dark: #0d1526;
+  --color-navy-light: #2a3a63;
+  --color-gold: #c9974a;
+  --color-gold-dark: #a97c34;
+  --color-beige: #f6f1e7;
+  --color-beige-dark: #ece4d2;
+  --color-warn: #e07b2b;
+  --color-danger: #dc2626;
+  --color-success: #1f9d55;
+  --color-info: #2f6fb0;
+
+  --background: #ffffff;
+  --foreground: var(--color-navy);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-navy: var(--color-navy);
+  --color-navy-dark: var(--color-navy-dark);
+  --color-navy-light: var(--color-navy-light);
+  --color-gold: var(--color-gold);
+  --color-gold-dark: var(--color-gold-dark);
+  --color-beige: var(--color-beige);
+  --color-beige-dark: var(--color-beige-dark);
+  --color-warn: var(--color-warn);
+  --color-danger: var(--color-danger);
+  --color-success: var(--color-success);
+  --color-info: var(--color-info);
+
+  --font-sans: system-ui, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic",
+    "Noto Sans JP", "Roboto", "Droid Sans", sans-serif;
+
+  --radius-app: 12px;
+}
+
+/* 古いAndroidタブレットでも軽快に動作させるため、装飾的なアニメーションは最小限にする */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  background: var(--color-beige);
+  color: var(--color-navy);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* すべてのボタンは56px以上・角丸12pxを基本とする（第20章・第34章） */
+.btn-base {
+  min-height: 56px;
+  border-radius: var(--radius-app);
+  font-weight: 700;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: opacity 0.15s ease, transform 0.05s ease;
+  touch-action: manipulation;
+}
+
+.btn-base:active {
+  transform: scale(0.98);
+}
+
+.card-base {
+  background: #ffffff;
+  border-radius: var(--radius-app);
+  box-shadow: 0 1px 3px rgba(22, 33, 62, 0.08);
+}
