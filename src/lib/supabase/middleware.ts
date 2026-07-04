@@ -12,7 +12,6 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/icons") ||
     pathname === "/favicon.ico" ||
     pathname === "/offline.html" ||
-    pathname === "/icon.svg" ||
     pathname === "/sw.js"
   );
 }

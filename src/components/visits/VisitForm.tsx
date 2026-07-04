@@ -301,10 +301,6 @@ export function VisitForm({
       {/* 基本情報 */}
       <Card>
         <CardTitle>基本情報</CardTitle>
-        <p className="text-xs text-navy/40 -mt-2 mb-4">
-          既存顧客は【来店】から開くと前回情報を自動入力
-        </p>
-
         <div className="flex flex-col gap-4">
           <label className="block">
             <span className="block text-sm font-bold text-navy/70 mb-1.5">

@@ -11,7 +11,7 @@ export default async function SearchPage() {
   const tags = await listTags();
 
   return (
-    <AppShell title="検索・オフライン・設定" staffName={profile.display_name} role={profile.role}>
+    <AppShell title="検索" staffName={profile.display_name} role={profile.role}>
       <SearchClient tagNames={tags.map((t) => t.name)} />
     </AppShell>
   );

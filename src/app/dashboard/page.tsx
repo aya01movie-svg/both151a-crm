@@ -45,17 +45,13 @@ export default async function DashboardPage() {
     data.todayBirthdays.length > 0;
 
   return (
-    <AppShell title="ホーム / ダッシュボード" staffName={profile.display_name} role={profile.role}>
-      <p className="text-navy/50 text-sm mb-4">
-        営業中に必要な情報を1画面で確認
-      </p>
-
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+    <AppShell title="ホーム" staffName={profile.display_name} role={profile.role}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         {kpis.map((k) => (
-          <Card key={k.label} className="text-center">
-            <p className="text-navy/50 text-xs font-bold mb-1">{k.label}</p>
-            <p className="text-navy text-xl font-black">{k.value}</p>
-            <p className="text-navy/40 text-[11px] mt-0.5">{k.sub}</p>
+          <Card key={k.label} className="text-center min-w-0 overflow-hidden">
+            <p className="text-navy/50 text-xs font-bold mb-1 truncate">{k.label}</p>
+            <p className="text-navy text-lg sm:text-xl font-black truncate">{k.value}</p>
+            <p className="text-navy/40 text-[11px] mt-0.5 truncate">{k.sub}</p>
           </Card>
         ))}
       </div>

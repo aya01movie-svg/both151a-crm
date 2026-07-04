@@ -25,12 +25,12 @@ export function BottomNav({ role }: { role: StaffRole }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 min-h-14 flex flex-col items-center justify-center gap-0.5 text-[11px] font-bold ${
+            className={`flex-1 min-w-0 min-h-14 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold px-0.5 ${
               active ? "text-navy" : "text-navy/40"
             }`}
           >
             <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-            {item.label}
+            <span className="truncate max-w-full">{item.shortLabel ?? item.label}</span>
           </Link>
         );
       })}

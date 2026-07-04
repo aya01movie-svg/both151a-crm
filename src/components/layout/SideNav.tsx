@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "./nav-items";
 import type { StaffRole } from "@/types/database";
 
 /**
- * タブレット横向き・PC用の左カラムナビゲーション（第33章）。
+ * タブレット横向き・PC用の左カラムナビゲーション。
  * md以上の画面幅で表示し、スマホでは BottomNav に切り替える。
  */
 export function SideNav({ role }: { role: StaffRole }) {
@@ -35,6 +36,20 @@ export function SideNav({ role }: { role: StaffRole }) {
           );
         }
       )}
+
+      <div className="mt-auto flex items-center gap-2 px-4 py-3 text-navy/40">
+        <Image
+          src="/icons/icon-96.png"
+          alt=""
+          width={24}
+          height={24}
+          className="rounded-full"
+        />
+        <div className="leading-tight">
+          <p className="text-xs font-bold">きゃってぃー</p>
+          <p className="text-[10px]">Ver. 1.0.0</p>
+        </div>
+      </div>
     </nav>
   );
 }

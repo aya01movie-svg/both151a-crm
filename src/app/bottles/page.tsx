@@ -37,8 +37,6 @@ export default async function BottlesPage({
 
   return (
     <AppShell title="ボトル管理" staffName={profile.display_name} role={profile.role}>
-      <p className="text-navy/50 text-sm mb-3">複数本預かり・期限変更・状態履歴を保存</p>
-
       <div className="mb-3">
         <CustomerSearchBar placeholder="検索：顧客名・ボトル名・種類" />
       </div>

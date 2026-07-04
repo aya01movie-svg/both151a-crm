@@ -41,8 +41,6 @@ export default async function CustomersPage({
 
   return (
     <AppShell title="顧客一覧" staffName={profile.display_name} role={profile.role}>
-      <p className="text-navy/50 text-sm mb-3">一覧だけで状況が分かる情報多めカード</p>
-
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="flex-1">
           <CustomerSearchBar placeholder="検索：名前・別名・ふりがな・タグ・ボトル・メモ・領収書宛名" />

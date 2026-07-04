@@ -55,11 +55,6 @@ export default async function NewVisitPage({
 
   return (
     <AppShell title="来店登録" staffName={profile.display_name} role={profile.role}>
-      <p className="text-navy/50 text-sm mb-4">
-        {initialReservation
-          ? "予約内容を引き継いで来店登録します"
-          : "既存顧客は【来店】から開くと前回情報を自動入力"}
-      </p>
       <VisitForm tags={tags} initialCustomer={initialCustomer} initialReservation={initialReservation} />
     </AppShell>
   );

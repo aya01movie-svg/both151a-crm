@@ -124,16 +124,13 @@ export function SearchClient({ tagNames = [] }: { tagNames?: string[] }) {
         </span>
       </div>
 
-      <p className="text-navy/40 text-xs mb-4">
-        検索対象：登録名・別名・ふりがな・本名／タグ／領収書宛名／メモ／同伴者・金額・チップ・日付（オンライン時）　
-        {cacheStatus.count > 0 && (
-          <>
-            ・オフライン用に{cacheStatus.count.toLocaleString()}件を保存済み（
-            {formatSyncTime(cacheStatus.lastSyncedAt)}
-            {cacheStatus.syncing ? "・更新中…" : ""}）
-          </>
-        )}
-      </p>
+      {cacheStatus.count > 0 && (
+        <p className="text-navy/40 text-xs mb-4">
+          オフライン用に{cacheStatus.count.toLocaleString()}件を保存済み（
+          {formatSyncTime(cacheStatus.lastSyncedAt)}
+          {cacheStatus.syncing ? "・更新中…" : ""}）
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {["株式会社", "(株)", ...tagNames, ...BOTTLE_TYPE_CANDIDATES].map((word) => (

@@ -23,7 +23,6 @@ export default async function CalendarPage({
 
   return (
     <AppShell title="カレンダー" staffName={profile.display_name} role={profile.role}>
-      <p className="text-navy/50 text-sm mb-4">何日に誰が来たかを一目で確認</p>
       <CalendarClient data={data} />
     </AppShell>
   );

@@ -3,15 +3,19 @@ import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
-  title: "both151'A CRM",
-  description: "飲食店向け顧客管理システム",
+  title: "きゃってぃー",
+  description: "きゃってぃー",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: [
+      { url: "/icons/icon-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" }],
   },
   robots: {
-    // 第41章: 検索エンジンに登録されないようにする
+    // 検索エンジンに登録されないようにする
     index: false,
     follow: false,
   },

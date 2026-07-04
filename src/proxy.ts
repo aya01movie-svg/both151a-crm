@@ -17,6 +17,6 @@ export const config = {
      * - _next/static, _next/image (静的ファイル)
      * - favicon.ico, manifest, icons, service worker, オフラインフォールバックページ
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|icon.svg|icons/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|icons/).*)",
   ],
 };

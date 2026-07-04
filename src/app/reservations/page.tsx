@@ -37,8 +37,6 @@ export default async function ReservationsPage({
 
   return (
     <AppShell title="予約管理" staffName={profile.display_name} role={profile.role}>
-      <p className="text-navy/50 text-sm mb-4">予約 → 来店登録へ引き継ぎ</p>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="flex flex-col gap-4">
           <Card>

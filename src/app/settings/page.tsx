@@ -7,7 +7,6 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { TagManager } from "@/components/settings/TagManager";
 import { StaffManager } from "@/components/settings/StaffManager";
-import { ClearLocalDataButton } from "@/components/settings/ClearLocalDataButton";
 import { formatDateTime } from "@/lib/date";
 
 export default async function SettingsPage() {
@@ -22,11 +21,6 @@ export default async function SettingsPage() {
   return (
     <AppShell title="設定" staffName={profile.display_name} role={profile.role}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardTitle>動作確認用ツール</CardTitle>
-          <ClearLocalDataButton />
-        </Card>
-
         <Card>
           <CardTitle>タグ管理</CardTitle>
           {isAdmin ? (
@@ -44,7 +38,7 @@ export default async function SettingsPage() {
                 ))}
               </div>
               <p className="text-navy/40 text-sm">
-                タグの追加・削除は管理者アカウントでログインしてください（第32章）。
+                タグの追加・削除は管理者アカウントでログインしてください。
               </p>
             </>
           )}
@@ -59,17 +53,14 @@ export default async function SettingsPage() {
           <Card className="border-2 border-dashed border-navy/15">
             <CardTitle>管理者専用機能</CardTitle>
             <p className="text-navy/40 text-sm">
-              スタッフ管理・CSV出力・監査ログ閲覧は管理者アカウントでログインすると表示されます。
+              スタッフ管理・データ出力・変更履歴の閲覧は管理者アカウントでログインすると表示されます。
             </p>
           </Card>
         )}
 
         {isAdmin && (
           <Card>
-            <CardTitle>CSV出力</CardTitle>
-            <p className="text-navy/50 text-sm mb-3">
-              UTF-8形式でダウンロードします（第16章）。
-            </p>
+            <CardTitle>データ出力</CardTitle>
             <div className="grid grid-cols-2 gap-2">
               <a href="/api/export/customers" className="btn-base bg-navy text-white text-sm">
                 顧客一覧
@@ -89,7 +80,7 @@ export default async function SettingsPage() {
 
         {isAdmin && (
           <Card>
-            <CardTitle>監査ログ（直近50件）</CardTitle>
+            <CardTitle>変更履歴（直近50件）</CardTitle>
             {auditLogs.length === 0 && (
               <p className="text-navy/40 text-sm">まだ記録がありません。</p>
             )}
