@@ -15,7 +15,7 @@ export function Header({ title, staffName }: HeaderProps) {
     <header className="bg-navy text-white h-16 flex items-center justify-between px-4 md:px-6 shrink-0">
       <div className="flex items-center gap-3 min-w-0">
         <Image
-          src="/icons/icon-96.png"
+          src="/icons/cat-icon-96.png"
           alt=""
           width={32}
           height={32}

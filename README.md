@@ -158,8 +158,9 @@ npm run build        # 本番ビルド確認
 1. **Supabase側の準備**
    - 本番用Supabaseプロジェクトを作成（開発用と分けることを推奨）
    - `supabase/001`〜`011`を番号順に適用
+   - **試作・動作確認中にテストデータを入力した場合**、`supabase/optional_reset_test_data_before_production.sql` を実行してまっさらな状態にする（完全削除・元に戻せないため本番開始前の1回のみ）
    - Authentication → Users からスタッフアカウントを発行し、`profiles.role`を`admin`に昇格（`supabase/README.md`参照）
-   - Authentication → Settings でセッション有効期限（JWT expiry）を運用方針に合わせて設定（第10章レビュー「ログイン保持」対応の一環。デフォルトのままだと長時間ログイン状態が保持されます）
+   - Authentication → Settings でセッション有効期限（JWT expiry）を運用方針に合わせて設定（デフォルトのままだと長時間ログイン状態が保持されます）
 
 2. **ホスティング側の準備（例: Vercel）**
    - リポジトリをGit管理下に置き、Vercelと連携

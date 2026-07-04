@@ -39,7 +39,7 @@ export function SideNav({ role }: { role: StaffRole }) {
 
       <div className="mt-auto flex items-center gap-2 px-4 py-3 text-navy/40">
         <Image
-          src="/icons/icon-96.png"
+          src="/icons/cat-icon-96.png"
           alt=""
           width={24}
           height={24}

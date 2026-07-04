@@ -46,7 +46,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-beige">
       <header className="bg-navy text-white h-16 flex items-center gap-3 px-4 md:px-6">
         <Image
-          src="/icons/icon-96.png"
+          src="/icons/cat-icon-96.png"
           alt=""
           width={32}
           height={32}
