@@ -4,6 +4,7 @@
   "description": "きゃってぃー",
   "start_url": "/dashboard",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
   "background_color": "#f6f1e7",
   "theme_color": "#16213e",
