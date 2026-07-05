@@ -50,8 +50,8 @@ export function BottleRow({ bottle }: { bottle: BottleWithCustomer }) {
             期限：{bottle.status === "kept" ? formatDate(bottle.expiry_date) : "対象外"}（登録 {formatDate(bottle.start_date)}）
           </p>
           {bottle.companion_names && bottle.companion_names.length > 0 && (
-            <p className="text-xs text-navy/40 mt-0.5">
-              同伴：{bottle.companion_names.join("、")}
+            <p className="text-xs font-bold text-info mt-1 bg-info/5 rounded px-1.5 py-0.5 inline-block">
+              👥 同伴：{bottle.companion_names.join("、")}
             </p>
           )}
         </div>

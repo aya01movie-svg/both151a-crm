@@ -156,3 +156,35 @@ export async function setBottleStatusAction(bottleId: string, status: BottleStat
   revalidatePath("/bottles");
   if (bottle) revalidatePath(`/customers/${bottle.customer_id}`);
 }
+
+/** シャンパン追加（金額対応・顧客詳細から登録）。 */
+export async function addChampagneAction(
+  _prev: BottleFormState,
+  formData: FormData
+): Promise<BottleFormState> {
+  const customerId = String(formData.get("customer_id") ?? "").trim();
+  const name = String(formData.get("champagne_name") ?? "").trim();
+  const quantity = Math.max(1, Number(formData.get("champagne_quantity") ?? 1) || 1);
+  const amount = Math.max(0, Number(formData.get("champagne_amount") ?? 0) || 0);
+  const memo = String(formData.get("champagne_memo") ?? "").trim();
+
+  if (!customerId) return { error: "顧客情報が不正です。" };
+  if (!name) return { error: "シャンパン名を入力してください。" };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from("champagnes").insert({
+    customer_id: customerId,
+    name,
+    quantity,
+    amount,
+    memo: memo || null,
+    created_by: user?.id ?? null,
+  });
+  if (error) return { error: toErrorMessage(error, "保存できませんでした。もう一度お試しください。") };
+
+  revalidatePath(`/customers/${customerId}`);
+  return ok;
+}

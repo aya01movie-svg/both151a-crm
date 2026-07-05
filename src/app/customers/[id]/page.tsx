@@ -10,6 +10,7 @@ import { RankSelector } from "@/components/customers/RankSelector";
 import { FavoriteToggle } from "@/components/customers/FavoriteToggle";
 import { BottleStatusBadge } from "@/components/customers/BottleStatusBadge";
 import { BottleAddForm } from "@/components/customers/BottleAddForm";
+import { ChampagneAddForm } from "@/components/customers/ChampagneAddForm";
 import { NoteForm } from "@/components/customers/NoteForm";
 import { CautionToggle } from "@/components/customers/CautionToggle";
 import { InvalidateNoteButton } from "@/components/customers/InvalidateNoteButton";
@@ -238,15 +239,16 @@ export default async function CustomerDetailPage({
             {/* 同伴来店した代表者のボトル（同伴者視点での閲覧） */}
             {associatedBottles.length > 0 && (
               <div className="mt-4 border-t border-navy/10 pt-3">
-                <p className="text-xs font-bold text-navy/40 mb-2">
-                  📌 同伴来店時の代表者ボトル（参照用）
+                <p className="text-xs font-bold text-navy/50 mb-2">
+                  👥 同伴来店した代表者のボトル
                 </p>
                 <ul className="flex flex-col gap-2">
                   {associatedBottles.map((b) => (
-                    <li key={b.id} className="flex items-center justify-between gap-2 border-b border-navy/5 pb-2 last:border-0 bg-navy/3 rounded">
+                    <li key={b.id} className="flex items-center justify-between gap-2 border border-info/20 bg-info/5 rounded-app p-2">
                       <div className="min-w-0">
                         <p className="font-bold text-navy text-sm truncate">
-                          {b.bottle_type && <span>{b.bottle_type}</span>}
+                          🍷
+                          {b.bottle_type && <span className="ml-1">{b.bottle_type}</span>}
                           {b.bottle_type && b.bottle_name && b.bottle_name !== b.bottle_type && (
                             <span className="text-navy/40 font-normal">（{b.bottle_name}）</span>
                           )}
@@ -255,9 +257,13 @@ export default async function CustomerDetailPage({
                             <span className="text-navy/40 font-normal text-xs ml-1">×{b.quantity}</span>
                           )}
                         </p>
-                        <p className="text-xs text-navy/40">{b.ownerName}様のボトル</p>
+                        <p className="text-xs text-info font-bold">
+                          <a href={`/customers/${b.customer_id}`} className="hover:underline">
+                            {b.ownerName}様のボトル
+                          </a>
+                        </p>
                         <p className="text-xs text-navy/40">
-                          期限 {b.status === "kept" ? formatDate(b.expiry_date) : "対象外"}
+                          期限 {b.status === "kept" ? formatDate(b.expiry_date) : b.status === "finished" ? "飲み切り済" : "対象外"}
                         </p>
                       </div>
                     </li>
@@ -269,21 +275,37 @@ export default async function CustomerDetailPage({
 
           {champagnes.length > 0 && (
             <Card>
-              <CardTitle>シャンパン</CardTitle>
+              <CardTitle>🍾 シャンパン</CardTitle>
               <ul className="flex flex-col gap-2">
                 {champagnes.map((c) => (
                   <li key={c.id} className="border-b border-navy/5 pb-2 last:border-0">
-                    <p className="font-bold text-navy">
-                      {c.name}
-                      {c.quantity > 1 && (
-                        <span className="text-navy/40 font-normal text-xs ml-1">×{c.quantity}</span>
-                      )}
-                    </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-bold text-navy">
+                        {c.name}
+                        {c.quantity > 1 && (
+                          <span className="text-navy/40 font-normal text-xs ml-1">×{c.quantity}</span>
+                        )}
+                      </p>
+                      {(c as unknown as { amount?: number }).amount ? (
+                        <span className="text-sm font-bold text-success shrink-0">
+                          ¥{((c as unknown as { amount: number }).amount).toLocaleString("ja-JP")}
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-xs text-navy/40">{formatDate(c.created_at)}</p>
                     {c.memo && <p className="text-xs text-navy/30">{c.memo}</p>}
                   </li>
                 ))}
               </ul>
+              <ChampagneAddForm customerId={customer.id} />
+            </Card>
+          )}
+
+          {champagnes.length === 0 && (
+            <Card>
+              <CardTitle>🍾 シャンパン</CardTitle>
+              <p className="text-navy/40 text-sm mb-2">シャンパンの記録はありません。</p>
+              <ChampagneAddForm customerId={customer.id} />
             </Card>
           )}
 

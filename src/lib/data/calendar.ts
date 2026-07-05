@@ -96,7 +96,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
   const [visitsRes, reservationsRes, customersRes, bottlesRes] = await Promise.all([
     supabase
       .from("visits")
-      .select("id, visited_at, amount, tip, customers:primary_customer_id(display_name)")
+      .select("id, visited_at, amount, tip, primary_customer_id")
       .eq("invalidated", false)
       .gte("visited_at", monthStartIso)
       .lt("visited_at", monthEndIso),
@@ -174,35 +174,35 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
   }
 
   // 来店・予約の顧客名を2段クエリで取得
+  const visitRows = (visitsRes.data ?? []) as { id: string; visited_at: string; amount: number; tip: number; primary_customer_id: string }[];
   const reservationRows = (reservationsRes.data ?? []) as { id: string; reserved_at: string; status: string; memo: string | null; customer_id: string }[];
-  const reservationCustomerIds = [...new Set(reservationRows.map((r) => r.customer_id))];
-  const reservationCustomerNameById = new Map<string, string>();
-  if (reservationCustomerIds.length > 0) {
-    const { data: rcData } = await supabase
+
+  const allVisitCustIds = [...new Set([
+    ...visitRows.map((v) => v.primary_customer_id),
+    ...reservationRows.map((r) => r.customer_id),
+  ])];
+  const calCustNameById = new Map<string, string>();
+  if (allVisitCustIds.length > 0) {
+    const { data: calCustData } = await supabase
       .from("customers")
       .select("id, display_name")
-      .in("id", reservationCustomerIds);
-    for (const c of (rcData ?? []) as { id: string; display_name: string }[]) {
-      reservationCustomerNameById.set(c.id, c.display_name);
+      .in("id", allVisitCustIds);
+    for (const c of (calCustData ?? []) as { id: string; display_name: string }[]) {
+      calCustNameById.set(c.id, c.display_name);
     }
   }
+  const reservationCustomerNameById = calCustNameById; // 同じmapを再利用
 
   let monthTotalAmount = 0;
   let monthTotalTip = 0;
 
-  for (const v of (visitsRes.data ?? []) as unknown as {
-    id: string;
-    visited_at: string;
-    amount: number;
-    tip: number;
-    customers: { display_name: string } | null;
-  }[]) {
+  for (const v of visitRows) {
     const dateStr = toJstDateString(v.visited_at);
     const day = days[dateStr];
     if (!day) continue;
     day.visits.push({
       id: v.id,
-      customerName: v.customers?.display_name ?? "",
+      customerName: calCustNameById.get(v.primary_customer_id) ?? "",
       companionNames: visitCompanionsByVisit.get(v.id) ?? [],
       amount: v.amount,
       tip: v.tip,

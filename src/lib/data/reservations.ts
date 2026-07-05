@@ -30,7 +30,7 @@ export async function listReservations(): Promise<{
 
   const { data, error } = await supabase
     .from("reservations")
-    .select("*, customers(display_name, caution_level)")
+    .select("*")
     .gte("reserved_at", `${todayStart}T00:00:00`)
     .lte("reserved_at", rangeEnd)
     .order("reserved_at", { ascending: true })
@@ -38,9 +38,20 @@ export async function listReservations(): Promise<{
 
   if (error) throw error;
 
-  const rows = (data ?? []) as unknown as (Reservation & {
-    customers: { display_name: string; caution_level: "none" | "caution" | "banned" } | null;
-  })[];
+  const rows = (data ?? []) as Reservation[];
+
+  // 顧客名・注意レベルを2段クエリで取得
+  const resCustIds = [...new Set(rows.map((r) => r.customer_id))];
+  const resCustById = new Map<string, { display_name: string; caution_level: "none" | "caution" | "banned" }>();
+  if (resCustIds.length > 0) {
+    const { data: custData } = await supabase
+      .from("customers")
+      .select("id, display_name, caution_level")
+      .in("id", resCustIds);
+    for (const c of (custData ?? []) as { id: string; display_name: string; caution_level: "none" | "caution" | "banned" }[]) {
+      resCustById.set(c.id, c);
+    }
+  }
 
   const ids = rows.map((r) => r.id);
   const membersByReservation = new Map<string, string[]>();
@@ -73,8 +84,8 @@ export async function listReservations(): Promise<{
 
   const withCustomer: ReservationWithCustomer[] = rows.map((r) => ({
     ...r,
-    customer_display_name: r.customers?.display_name ?? "",
-    customer_caution_level: r.customers?.caution_level ?? "none",
+    customer_display_name: resCustById.get(r.customer_id)?.display_name ?? "",
+    customer_caution_level: resCustById.get(r.customer_id)?.caution_level ?? "none",
     companion_names: membersByReservation.get(r.id) ?? [],
   }));
 

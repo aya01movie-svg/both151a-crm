@@ -44,7 +44,7 @@ export default async function BottlesPage({
   return (
     <AppShell title="ボトル管理" staffName={profile.display_name} role={profile.role}>
       <div className="mb-3">
-        <CustomerSearchBar placeholder="検索：顧客名・ボトル名・種類" />
+        <CustomerSearchBar placeholder="検索：顧客名・ボトル名・種類（同伴者名でも検索可）" />
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-3">

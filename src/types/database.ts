@@ -122,6 +122,7 @@ export type Champagne = {
   visit_id: string | null;
   name: string;
   quantity: number;
+  amount: number;
   memo: string | null;
   created_by: string | null;
   created_at: string;
