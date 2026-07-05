@@ -49,6 +49,11 @@ export function BottleRow({ bottle }: { bottle: BottleWithCustomer }) {
           <p className="text-xs text-navy/40 mt-0.5">
             期限：{bottle.status === "kept" ? formatDate(bottle.expiry_date) : "対象外"}（登録 {formatDate(bottle.start_date)}）
           </p>
+          {bottle.companion_names && bottle.companion_names.length > 0 && (
+            <p className="text-xs text-navy/40 mt-0.5">
+              同伴：{bottle.companion_names.join("、")}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
