@@ -14,14 +14,14 @@ type HeaderProps = {
  */
 export function Header({ title, staffName }: HeaderProps) {
   return (
-    <header className="bg-gold text-navy-dark h-16 flex items-center justify-between px-4 md:px-6 shrink-0 border-b border-black/10">
+    <header className="bg-gold text-navy-dark min-h-[72px] flex items-center justify-between px-4 md:px-6 shrink-0 border-b border-black/10 py-2">
       <div className="flex items-center gap-3 min-w-0">
         <Image
           src="/icons/matty-icon-96.png"
           alt=""
-          width={44}
-          height={44}
-          className="rounded-full shrink-0"
+          width={56}
+          height={56}
+          className="rounded-2xl shrink-0 shadow-sm"
         />
         <span className="font-black text-lg tracking-tight shrink-0">MATTY</span>
         <span className="text-navy-dark/70 text-sm truncate hidden sm:inline">

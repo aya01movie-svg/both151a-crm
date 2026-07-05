@@ -24,6 +24,7 @@ export function SideNav({ role }: { role: StaffRole }) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               className={`flex items-center gap-3 rounded-app px-4 py-3 text-sm font-bold transition-colors ${
                 active
                   ? "bg-gold text-navy-dark"

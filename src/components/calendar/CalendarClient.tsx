@@ -118,20 +118,25 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
             day.isHoliday ||
             day.isClosedDay;
 
-          // RC1修正: new Date(dateStr).getUTCDay() ではなく日付文字列を直接パースして
-          // ローカルタイムゾーン依存を排除する（日曜が黒になるバグの原因）
           const [dy, dm, dd] = dateStr.split("-").map(Number);
-          const dayOfWeek = new Date(dy, dm - 1, dd).getDay(); // ローカル日付でOK（年月日を直接指定するため）
+          const dayOfWeek = new Date(dy, dm - 1, dd).getDay();
           const isSunday = dayOfWeek === 0;
           const isSaturday = dayOfWeek === 6;
 
+          // 曜日色・祝日色は「今日」「選択中」よりも優先して表示する
+          // （当日が日曜でも赤、当日が土曜でも青にする）
+          const textColorClass =
+            isSunday || day.isHoliday
+              ? "text-danger font-black"
+              : isSaturday
+              ? "text-info font-black"
+              : isToday
+              ? "text-navy"
+              : "text-navy/60";
+
           const dayNumColor = isToday
-            ? "text-navy bg-navy/10 rounded-full px-1.5"
-            : isSunday
-            ? "text-danger font-black"
-            : isSaturday
-            ? "text-info font-black"
-            : "text-navy/60";
+            ? `${textColorClass} bg-navy/10 rounded-full px-1.5`
+            : textColorClass;
 
           return (
             <button

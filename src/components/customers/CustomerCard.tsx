@@ -68,19 +68,27 @@ export function CustomerCard({
         </div>
       </div>
 
-      <div className="flex gap-2 shrink-0">
-        <LinkButton href={`/visits/new?customer=${customer.id}`} variant="gold" className="px-4">
-          来店
-        </LinkButton>
-        {secondaryAction === "reservation" ? (
-          <LinkButton href={`/reservations?customer=${customer.id}`} variant="navy" className="px-4">
-            予約
+      <div className="flex flex-col gap-1.5 shrink-0">
+        <div className="flex gap-2">
+          <LinkButton href={`/visits/new?customer=${customer.id}`} variant="gold" className="px-4">
+            来店
           </LinkButton>
-        ) : (
-          <LinkButton href={`/customers/${customer.id}`} variant="navy" className="px-4">
-            詳細
-          </LinkButton>
-        )}
+          {secondaryAction === "reservation" ? (
+            <LinkButton href={`/reservations?customer=${customer.id}`} variant="navy" className="px-4">
+              予約
+            </LinkButton>
+          ) : (
+            <LinkButton href={`/customers/${customer.id}`} variant="navy" className="px-4">
+              詳細
+            </LinkButton>
+          )}
+        </div>
+        <a
+          href={`/customers/${customer.id}/edit`}
+          className="text-center text-xs text-navy/40 underline hover:text-navy/60"
+        >
+          誕生日・編集
+        </a>
       </div>
     </Card>
   );

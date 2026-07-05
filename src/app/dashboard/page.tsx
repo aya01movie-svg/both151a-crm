@@ -72,7 +72,7 @@ export default async function DashboardPage() {
   const hasNotice =
     hasBottleNotice ||
     data.upcomingBirthdays.length > 0 ||
-    data.todayReservationCount > 0 ||
+    data.todayReservations.length > 0 ||
     noticeItems.length > 0;
 
   return (
@@ -94,8 +94,8 @@ export default async function DashboardPage() {
           <Image
             src="/icons/matty-transparent-96.png"
             alt="MATTY"
-            width={56}
-            height={56}
+            width={72}
+            height={72}
             className="shrink-0 opacity-90"
           />
           <h2 className="text-base font-black text-navy">MATTYからお知らせ</h2>
@@ -106,15 +106,17 @@ export default async function DashboardPage() {
         )}
 
         <ul className="flex flex-col gap-3">
-          {data.todayReservationCount > 0 && (
-            <li className="flex items-start gap-3 p-3 rounded-app bg-[#e8f0fb]">
-              <span className="text-2xl leading-none">📅</span>
+          {data.todayReservations.map((r) => (
+            <li key={r.id} className="flex items-start gap-3 p-3 rounded-app bg-[#e8f0fb]">
+              <span className="text-2xl leading-none">📢</span>
               <div>
-                <p className="font-black text-navy text-sm">本日の予約</p>
-                <p className="text-navy/60 text-sm">{data.todayReservationCount}件あります</p>
+                <p className="font-black text-navy text-sm">本日予約</p>
+                <p className="text-navy/80 text-sm font-bold">
+                  {r.time}　{r.customerName}様　{r.peopleCount}名
+                </p>
               </div>
             </li>
-          )}
+          ))}
 
           {data.upcomingBirthdays.map((c) => (
             <li key={c.id} className="flex items-start gap-3 p-3 rounded-app bg-[#fce8f3]">

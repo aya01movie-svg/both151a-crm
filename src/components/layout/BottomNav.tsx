@@ -25,6 +25,7 @@ export function BottomNav({ role }: { role: StaffRole }) {
           <Link
             key={item.href}
             href={item.href}
+            prefetch={true}
             className={`flex-1 min-w-0 min-h-14 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold px-0.5 ${
               active ? "text-navy" : "text-navy/40"
             }`}

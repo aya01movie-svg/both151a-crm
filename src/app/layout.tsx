@@ -24,8 +24,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 50代スタッフも見やすいようピンチズームを許可する（user-scalable=yes がデフォルト）
+  // maximumScale と userScalable を指定しないことで制限を解除する
   themeColor: "#FEEC03",
 };
 

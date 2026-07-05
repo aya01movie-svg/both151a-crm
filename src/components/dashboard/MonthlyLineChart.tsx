@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  LineChart,
+  ComposedChart,
   Line,
   XAxis,
   YAxis,
@@ -17,45 +17,67 @@ function formatYen(n: number): string {
   return `¥${n.toLocaleString("ja-JP")}`;
 }
 
+const DATA_KEY_LABELS: Record<string, string> = {
+  thisYearAmount: "今年売上",
+  lastYearAmount: "昨年売上",
+  thisYearPeople: "来店人数",
+};
+
 export function MonthlyLineChart({ data }: { data: MonthlyGraphData[] }) {
   return (
     <div>
-      <ResponsiveContainer width="100%" height={220}>
-        <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={230}>
+        <ComposedChart data={data} margin={{ top: 8, right: 44, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="month"
             tickFormatter={(v: unknown) => `${v}月`}
             tick={{ fontSize: 11, fill: "#6b7280" }}
           />
+          {/* 左Y軸: 売上（円） */}
           <YAxis
+            yAxisId="amount"
+            orientation="left"
             tickFormatter={formatYen}
             tick={{ fontSize: 10, fill: "#6b7280" }}
-            width={48}
+            width={50}
+          />
+          {/* 右Y軸: 来店人数（人） */}
+          <YAxis
+            yAxisId="people"
+            orientation="right"
+            tickFormatter={(v: unknown) => `${v}人`}
+            tick={{ fontSize: 10, fill: "#16a34a" }}
+            width={40}
           />
           <Tooltip
-            formatter={(value: unknown, name: unknown) => [
-              `¥${Number(value).toLocaleString("ja-JP")}`,
-              String(name),
-            ]}
+            formatter={(value: unknown, dataKey: unknown) => {
+              const key = String(dataKey);
+              const num = Number(value);
+              if (key === "thisYearPeople") {
+                return [`${num}人`, DATA_KEY_LABELS[key] ?? key];
+              }
+              return [`¥${num.toLocaleString("ja-JP")}`, DATA_KEY_LABELS[key] ?? key];
+            }}
             labelFormatter={(v: unknown) => `${v}月`}
           />
           <Legend
+            formatter={(value: string) => DATA_KEY_LABELS[value] ?? value}
             wrapperStyle={{ fontSize: 12 }}
           />
           <Line
+            yAxisId="amount"
             type="monotone"
             dataKey="thisYearAmount"
-            name="今年売上"
             stroke="#2563eb"
             strokeWidth={2}
             dot={{ r: 3 }}
             activeDot={{ r: 5 }}
           />
           <Line
+            yAxisId="amount"
             type="monotone"
             dataKey="lastYearAmount"
-            name="昨年売上"
             stroke="#dc2626"
             strokeWidth={2}
             dot={{ r: 3 }}
@@ -63,20 +85,16 @@ export function MonthlyLineChart({ data }: { data: MonthlyGraphData[] }) {
             strokeDasharray="4 2"
           />
           <Line
+            yAxisId="people"
             type="monotone"
             dataKey="thisYearPeople"
-            name="来店人数"
             stroke="#16a34a"
             strokeWidth={2}
             dot={{ r: 3 }}
             activeDot={{ r: 5 }}
-            yAxisId={0}
           />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
-      <p className="text-[10px] text-navy/30 text-right mt-1">
-        ※来店人数は右軸なし（売上と同スケール表示）
-      </p>
     </div>
   );
 }
