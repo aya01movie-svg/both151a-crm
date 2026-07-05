@@ -311,6 +311,7 @@ export type Database = {
           p_new_customer_kana: string | null;
           p_companion_kanas: string[];
           p_new_customer_birthday: string | null;
+          p_companion_birthdays: string[];
         };
         Returns: { visit_id: string; customer_id: string };
       };

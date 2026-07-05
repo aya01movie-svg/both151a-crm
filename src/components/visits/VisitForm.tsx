@@ -32,7 +32,7 @@ type InitialReservation = {
   memo: string | null;
 } | null;
 
-type CompanionEntry = { name: string; kana: string };
+type CompanionEntry = { name: string; kana: string; birthday: string };
 
 type DraftShape = {
   representativeId: string | null;
@@ -59,7 +59,7 @@ function blankDraft(
 ): DraftShape {
   const info = initialCustomer?.lastVisitInfo;
   const companionNames = initialReservation?.companionNames ?? info?.companionNames ?? [];
-  const companions = companionNames.map((name) => ({ name, kana: "" }));
+  const companions = companionNames.map((name) => ({ name, kana: "", birthday: "" }));
   return {
     representativeId: initialCustomer?.id ?? null,
     representativeCaution: initialCustomer?.caution_level ?? "none",
@@ -172,7 +172,7 @@ export function VisitForm({
   function addCompanion() {
     setDraft((d) => {
       if (d.companions.length >= 10) return d;
-      const companions = [...d.companions, { name: "", kana: "" }];
+      const companions = [...d.companions, { name: "", kana: "", birthday: "" }];
       return { ...d, companions, peopleCount: companions.length + 1 };
     });
   }
@@ -214,7 +214,7 @@ export function VisitForm({
         receiptRequired: info.receipt_required,
         receiptName: info.receipt_name ?? "",
         tagIds: info.tags.map((t) => t.id),
-        companions: info.companionNames.map((name) => ({ name, kana: "" })),
+        companions: info.companionNames.map((name) => ({ name, kana: "", birthday: "" })),
         peopleCount: Math.max(1, info.companionNames.length + 1),
         memo: info.memo ?? "",
       }));
@@ -293,6 +293,9 @@ export function VisitForm({
       ))}
       {validCompanions.map((c, i) => (
         <input key={`kana-${i}`} type="hidden" name="companion_kanas" value={c.kana.trim()} />
+      ))}
+      {validCompanions.map((c, i) => (
+        <input key={`bday-${i}`} type="hidden" name="companion_birthdays" value={c.birthday.trim()} />
       ))}
       {draft.tagIds.map((id) => (
         <input key={id} type="hidden" name="tag_ids" value={id} />
@@ -451,13 +454,44 @@ export function VisitForm({
                     </button>
                   </div>
                   {c.name.trim() && (
-                    <input
-                      type="text"
-                      value={c.kana}
-                      onChange={(e) => updateCompanion(i, { kana: e.target.value })}
-                      placeholder="ふりがな（新規登録の場合・任意）"
-                      className="w-full min-h-10 rounded-app border-2 border-navy/10 bg-white px-3 text-xs text-navy focus:outline-none focus:border-gold"
-                    />
+                    <>
+                      <input
+                        type="text"
+                        value={c.kana}
+                        onChange={(e) => updateCompanion(i, { kana: e.target.value })}
+                        placeholder="ふりがな（新規登録の場合・任意）"
+                        className="w-full min-h-10 rounded-app border-2 border-navy/10 bg-white px-3 text-xs text-navy focus:outline-none focus:border-gold"
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-navy/40 shrink-0">誕生日（任意）</span>
+                        <select
+                          value={c.birthday.slice(5, 7) || ""}
+                          onChange={(e) => {
+                            const d = c.birthday.slice(8, 10) || "01";
+                            updateCompanion(i, { birthday: e.target.value ? `2000-${e.target.value}-${d}` : "" });
+                          }}
+                          className="min-h-9 rounded-app border border-navy/10 bg-white px-1 text-xs text-navy focus:outline-none"
+                        >
+                          <option value="">月</option>
+                          {Array.from({ length: 12 }, (_, m) => m + 1).map((mn) => (
+                            <option key={mn} value={String(mn).padStart(2, "0")}>{mn}月</option>
+                          ))}
+                        </select>
+                        <select
+                          value={c.birthday.slice(8, 10) || ""}
+                          onChange={(e) => {
+                            const mo = c.birthday.slice(5, 7) || "01";
+                            updateCompanion(i, { birthday: e.target.value ? `2000-${mo}-${e.target.value}` : "" });
+                          }}
+                          className="min-h-9 rounded-app border border-navy/10 bg-white px-1 text-xs text-navy focus:outline-none"
+                        >
+                          <option value="">日</option>
+                          {Array.from({ length: 31 }, (_, d) => d + 1).map((dd) => (
+                            <option key={dd} value={String(dd).padStart(2, "0")}>{dd}日</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
                   )}
                 </div>
               ))}

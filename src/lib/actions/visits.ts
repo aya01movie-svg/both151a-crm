@@ -59,6 +59,9 @@ export async function saveVisitAction(
     const companionKanas = formData
       .getAll("companion_kanas")
       .map((v) => String(v).trim());
+    const companionBirthdays = formData
+      .getAll("companion_birthdays")
+      .map((v) => String(v).trim());
 
     const tagIds = formData.getAll("tag_ids").map((v) => String(v));
     const receiptRequired = formData.get("receipt_required") === "1";
@@ -76,6 +79,7 @@ export async function saveVisitAction(
       peopleCount: Number(formData.get("people_count") ?? 1),
       companionNames,
       companionKanas,
+      companionBirthdays,
       amount: Number(formData.get("amount") ?? 0),
       tip: Number(formData.get("tip") ?? 0),
       paymentMethod: String(formData.get("payment_method") ?? "cash") as NewVisitInput["paymentMethod"],

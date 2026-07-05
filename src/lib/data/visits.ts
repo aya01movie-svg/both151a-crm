@@ -131,6 +131,7 @@ export type NewVisitInput = {
   peopleCount: number;
   companionNames: string[]; // 最大10名（第4章）
   companionKanas: string[]; // companionNamesと同じ並び順（レビュー指摘⑨）
+  companionBirthdays: string[]; // 月/日のみ (2000-MM-DD 形式, 未入力は空文字)
   amount: number;
   tip: number;
   paymentMethod: PaymentMethod;
@@ -174,6 +175,7 @@ export async function createVisit(input: NewVisitInput) {
     p_new_customer_kana: input.newCustomerKana ?? null,
     p_new_customer_birthday: input.newCustomerBirthday || null,
     p_companion_kanas: input.companionKanas,
+    p_companion_birthdays: input.companionBirthdays,
   });
 
   if (error) {
