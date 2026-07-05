@@ -128,10 +128,13 @@ export type VisitHistoryEntry = Visit & {
   companionNames: string[];
 };
 
+export type AssociatedBottle = Bottle & { ownerName: string };
+
 export type CustomerDetail = {
   customer: CustomerWithMonthStats;
   visits: VisitHistoryEntry[];
   bottles: Bottle[];
+  associatedBottles: AssociatedBottle[];
   champagnes: Champagne[];
   notes: NoteWithAuthor[];
   cautionRegisteredByName: string | null;
@@ -294,10 +297,40 @@ export async function getCustomerDetail(
     })[]
   ).map((n) => ({ ...n, authorName: n.profiles?.display_name ?? null }));
 
+  // 同伴者として来店した時の「代表者のボトル」を取得する。
+  // 店舗運用：代表者にボトルを登録したとき、同伴者もそのボトルを見える状態にする。
+  let associatedBottles: AssociatedBottle[] = [];
+  if (companionVisits.length > 0) {
+    const primaryIds = [...new Set(companionVisits.map((v) => v.primary_customer_id))];
+    if (primaryIds.length > 0) {
+      const [assocBottlesRes, assocNamesRes] = await Promise.all([
+        supabase
+          .from("bottles")
+          .select("*")
+          .in("customer_id", primaryIds)
+          .order("status", { ascending: true })
+          .order("expiry_date", { ascending: true }),
+        supabase
+          .from("customers")
+          .select("id, display_name")
+          .in("id", primaryIds),
+      ]);
+      const nameById = new Map(
+        ((assocNamesRes.data ?? []) as { id: string; display_name: string }[])
+          .map((c) => [c.id, c.display_name])
+      );
+      associatedBottles = ((assocBottlesRes.data ?? []) as Bottle[]).map((b) => ({
+        ...b,
+        ownerName: nameById.get(b.customer_id) ?? "不明",
+      }));
+    }
+  }
+
   return {
     customer,
     visits,
     bottles: (bottlesRes.data ?? []) as Bottle[],
+    associatedBottles,
     champagnes: (champagnesRes.data ?? []) as Champagne[],
     notes,
     cautionRegisteredByName,

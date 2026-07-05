@@ -49,7 +49,7 @@ export default async function CustomerDetailPage({
   // 最近見た顧客（第36章）に記録する。表示をブロックしないよう待たない。
   void recordCustomerView(id);
 
-  const { customer, visits, bottles, champagnes, notes, cautionRegisteredByName } = detail;
+  const { customer, visits, bottles, associatedBottles, champagnes, notes, cautionRegisteredByName } = detail;
   const pace = computePace(customer);
 
   return (
@@ -234,6 +234,37 @@ export default async function CustomerDetailPage({
               期限変更・状態変更は<a href="/bottles" className="underline">ボトル管理</a>から行えます。
             </p>
             <BottleAddForm customerId={customer.id} autoOpen={visitSaved === "1"} />
+
+            {/* 同伴来店した代表者のボトル（同伴者視点での閲覧） */}
+            {associatedBottles.length > 0 && (
+              <div className="mt-4 border-t border-navy/10 pt-3">
+                <p className="text-xs font-bold text-navy/40 mb-2">
+                  📌 同伴来店時の代表者ボトル（参照用）
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {associatedBottles.map((b) => (
+                    <li key={b.id} className="flex items-center justify-between gap-2 border-b border-navy/5 pb-2 last:border-0 bg-navy/3 rounded">
+                      <div className="min-w-0">
+                        <p className="font-bold text-navy text-sm truncate">
+                          {b.bottle_type && <span>{b.bottle_type}</span>}
+                          {b.bottle_type && b.bottle_name && b.bottle_name !== b.bottle_type && (
+                            <span className="text-navy/40 font-normal">（{b.bottle_name}）</span>
+                          )}
+                          {!b.bottle_type && b.bottle_name}
+                          {b.quantity > 1 && (
+                            <span className="text-navy/40 font-normal text-xs ml-1">×{b.quantity}</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-navy/40">{b.ownerName}様のボトル</p>
+                        <p className="text-xs text-navy/40">
+                          期限 {b.status === "kept" ? formatDate(b.expiry_date) : "対象外"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </Card>
 
           {champagnes.length > 0 && (
