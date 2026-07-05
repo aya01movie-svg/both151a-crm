@@ -57,7 +57,7 @@ export function resolveEventDatesForMonth(
 ): Map<string, { title: string; emoji: string; event_type: string; id: string }[]> {
   const result = new Map<string, { title: string; emoji: string; event_type: string; id: string }[]>();
 
-  function push(dateStr: string, entry: { title: string; emoji: string; event_type: string; id: string }) {
+  function push(dateStr: string, entry: { title: string; emoji: string; event_type: string; id: string; url?: string | null }) {
     const list = result.get(dateStr) ?? [];
     list.push(entry);
     result.set(dateStr, list);
@@ -67,7 +67,7 @@ export function resolveEventDatesForMonth(
   const pad = (n: number) => String(n).padStart(2, "0");
 
   for (const ev of events) {
-    const entry = { title: ev.title, emoji: ev.emoji, event_type: ev.event_type, id: ev.id };
+    const entry = { title: ev.title, emoji: ev.emoji, event_type: ev.event_type, id: ev.id, url: ev.url };
 
     if (ev.schedule_type === "weekly" && ev.weekly_day !== null) {
       // 今月の指定曜日をすべて列挙
@@ -109,6 +109,7 @@ export type NoticeItem = {
   title: string;
   subtitle: string;
   colorClass: string;
+  url?: string | null;
 };
 
 export function buildNoticeItems(params: {
@@ -159,7 +160,7 @@ export function buildNoticeItems(params: {
         if (d.getDay() === ev.weekly_day) {
           const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
           const subtitle = i === 0 ? "本日開催" : i === 1 ? "明日開催" : `毎週${WEEKDAY_JA[ev.weekly_day]} / 次回 ${dateLabel(dateStr)}`;
-          items.push({ key: `ev-${ev.id}-${dateStr}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#e8f4ff]" });
+          items.push({ key: `ev-${ev.id}-${dateStr}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#e8f4ff]", url: ev.url });
           break;
         }
       }
@@ -170,7 +171,7 @@ export function buildNoticeItems(params: {
         const diff = dayDiff(dateStr);
         if (diff >= 0 && diff <= 30) {
           const subtitle = diff === 0 ? "本日" : `あと${diff}日 (${dateLabel(dateStr)})`;
-          items.push({ key: `ev-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#fef3e2]" });
+          items.push({ key: `ev-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#fef3e2]", url: ev.url });
           break;
         }
       }
@@ -178,7 +179,7 @@ export function buildNoticeItems(params: {
       const diff = dayDiff(ev.start_date);
       if (diff >= -1 && diff <= 14) {
         const subtitle = diff < 0 ? "昨日" : diff === 0 ? "本日" : `あと${diff}日 (${dateLabel(ev.start_date)})`;
-        items.push({ key: `ev-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#fef3e2]" });
+        items.push({ key: `ev-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#fef3e2]", url: ev.url });
       }
     } else if (ev.schedule_type === "range" && ev.start_date && ev.end_date) {
       const diffStart = dayDiff(ev.start_date);
@@ -189,7 +190,7 @@ export function buildNoticeItems(params: {
           diffStart > 0 ? `あと${diffStart}日から (〜${dateLabel(ev.end_date)})`
           : diffEnd === 0 ? "本日最終日"
           : "開催中";
-        items.push({ key: `ev-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#e8ffe8]" });
+        items.push({ key: `ev-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#e8ffe8]", url: ev.url });
       }
     }
   }

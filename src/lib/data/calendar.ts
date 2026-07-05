@@ -37,7 +37,7 @@ export type CalendarDayData = {
   reservations: CalendarReservationEntry[];
   birthdays: CalendarBirthdayEntry[];
   bottleExpiries: CalendarBottleEntry[];
-  events: { id: string; title: string; emoji: string; event_type: string }[];
+  events: { id: string; title: string; emoji: string; event_type: string; url?: string | null }[];
   isHoliday: boolean;
   holidayName: string | null;
   isClosedDay: boolean;

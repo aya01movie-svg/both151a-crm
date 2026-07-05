@@ -40,8 +40,8 @@ export function Header({ title, staffName }: HeaderProps) {
           <Image
             src="/icons/matty-transparent-96.png"
             alt=""
-            width={54}
-            height={54}
+            width={68}
+            height={68}
             className="shrink-0"
           />
           <span className="font-black text-xl tracking-tight shrink-0">MATTY</span>
@@ -62,9 +62,9 @@ export function Header({ title, staffName }: HeaderProps) {
         </form>
       </header>
 
-      {/* 日付バー */}
-      <div className="bg-gold/60 border-b border-black/5 py-1 text-center">
-        <p className="text-navy-dark font-bold text-sm md:text-base tracking-wide">
+      {/* 日付バー: 背景なし・文字のみ */}
+      <div className="py-1 text-center border-b border-black/5">
+        <p className="text-navy-dark/80 font-bold text-sm md:text-base tracking-wide">
           {dateLabel}
         </p>
       </div>

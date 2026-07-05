@@ -175,9 +175,19 @@ export default async function DashboardPage() {
               className={`flex items-start gap-3 p-3 rounded-app ${item.colorClass}`}
             >
               <span className="text-2xl leading-none">{item.emoji}</span>
-              <div>
+              <div className="min-w-0">
                 <p className="font-black text-navy text-sm">{item.title}</p>
                 <p className="text-navy/60 text-sm">{item.subtitle}</p>
+                {item.url && (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-info underline mt-0.5 inline-block"
+                  >
+                    🔗 詳細を見る
+                  </a>
+                )}
               </div>
             </li>
           ))}

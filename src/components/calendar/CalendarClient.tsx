@@ -287,7 +287,17 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                   )}
                   {selectedDay.events.map((ev) => (
                     <li key={ev.id} className="text-sm text-navy">
-                      {ev.emoji} {ev.title}
+                      <p>{ev.emoji} {ev.title}</p>
+                      {ev.url && (
+                        <a
+                          href={ev.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-info underline"
+                        >
+                          🔗 詳細を見る
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
