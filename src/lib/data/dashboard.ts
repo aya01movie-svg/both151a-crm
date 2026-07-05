@@ -196,3 +196,47 @@ export async function getDashboardData(): Promise<DashboardData> {
     vipNeedingFollowUp,
   };
 }
+
+/** 月別売上・来店人数（折れ線グラフ用：今年・昨年12ヶ月分） */
+export type MonthlyGraphData = {
+  month: number; // 1-12
+  thisYearAmount: number;
+  lastYearAmount: number;
+  thisYearPeople: number;
+};
+
+export async function getMonthlyGraphData(): Promise<MonthlyGraphData[]> {
+  const supabase = await createClient();
+  const now = new Date();
+  const todayJst = toJstDateString(now.toISOString());
+  const thisYear = Number(todayJst.slice(0, 4));
+
+  const { startIso: thisYearStart } = jstDateRangeToUtcIso(`${thisYear}-01-01`);
+  const { startIso: lastYearStart } = jstDateRangeToUtcIso(`${thisYear - 1}-01-01`);
+  const { startIso: lastYearEnd }   = jstDateRangeToUtcIso(`${thisYear}-01-01`);
+
+  const [thisYearRes, lastYearRes] = await Promise.all([
+    supabase.from("visits").select("visited_at, amount, people_count").eq("invalidated", false).gte("visited_at", thisYearStart),
+    supabase.from("visits").select("visited_at, amount").eq("invalidated", false).gte("visited_at", lastYearStart).lt("visited_at", lastYearEnd),
+  ]);
+
+  const thisYearByMonth: { amount: number; people: number }[] = Array.from({ length: 12 }, () => ({ amount: 0, people: 0 }));
+  const lastYearByMonth: number[] = Array(12).fill(0);
+
+  for (const v of (thisYearRes.data ?? []) as { visited_at: string; amount: number; people_count: number }[]) {
+    const mo = Number(toJstDateString(v.visited_at).slice(5, 7)) - 1;
+    thisYearByMonth[mo].amount += v.amount;
+    thisYearByMonth[mo].people += v.people_count;
+  }
+  for (const v of (lastYearRes.data ?? []) as { visited_at: string; amount: number }[]) {
+    const mo = Number(toJstDateString(v.visited_at).slice(5, 7)) - 1;
+    lastYearByMonth[mo] += v.amount;
+  }
+
+  return Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    thisYearAmount: thisYearByMonth[i].amount,
+    lastYearAmount: lastYearByMonth[i],
+    thisYearPeople: thisYearByMonth[i].people,
+  }));
+}

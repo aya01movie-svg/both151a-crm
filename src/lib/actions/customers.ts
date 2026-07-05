@@ -165,3 +165,48 @@ export async function updateCustomerRankAction(customerId: string, rank: string)
   revalidatePath(`/customers/${customerId}`);
   revalidatePath("/customers");
 }
+
+/**
+ * 顧客完全削除（管理者専用・RC1⑰）。
+ * 物理削除のため元に戻せない。設定画面からのみ実行可能。
+ */
+export async function deleteCustomerAction(customerId: string) {
+  const supabase = await createClient();
+  await supabase.from("customer_views").delete().eq("customer_id", customerId);
+  await supabase.from("customer_tags").delete().eq("customer_id", customerId);
+  await supabase.from("customer_aliases").delete().eq("customer_id", customerId);
+  await supabase.from("notes").delete().eq("customer_id", customerId);
+  await supabase.from("bottles").delete().eq("customer_id", customerId);
+  await supabase.from("champagnes").delete().eq("customer_id", customerId);
+  await supabase.from("visit_members").delete().eq("customer_id", customerId);
+  await supabase.from("reservation_members").delete().eq("customer_id", customerId);
+  await supabase.from("reservations").delete().eq("customer_id", customerId);
+  await supabase.from("visits").delete().eq("primary_customer_id", customerId);
+  const { error } = await supabase.from("customers").delete().eq("id", customerId);
+  if (error) throw new Error(toErrorMessage(error, "削除に失敗しました。"));
+  revalidatePath("/customers");
+  revalidatePath("/settings");
+}
+
+/**
+ * 重複顧客統合（管理者専用・RC1⑰）。
+ * fromId のデータを toId へ移して fromId を削除する。
+ */
+export async function mergeCustomerAction(fromId: string, toId: string) {
+  if (fromId === toId) throw new Error("同じ顧客を統合することはできません。");
+  const supabase = await createClient();
+  await supabase.from("visits").update({ primary_customer_id: toId }).eq("primary_customer_id", fromId);
+  await supabase.from("visit_members").update({ customer_id: toId }).eq("customer_id", fromId);
+  await supabase.from("reservations").update({ customer_id: toId }).eq("customer_id", fromId);
+  await supabase.from("reservation_members").update({ customer_id: toId }).eq("customer_id", fromId);
+  await supabase.from("bottles").update({ customer_id: toId }).eq("customer_id", fromId);
+  await supabase.from("champagnes").update({ customer_id: toId }).eq("customer_id", fromId);
+  await supabase.from("notes").update({ customer_id: toId }).eq("customer_id", fromId);
+  await supabase.from("customer_tags").delete().eq("customer_id", fromId);
+  await supabase.from("customer_aliases").delete().eq("customer_id", fromId);
+  await supabase.from("customer_views").delete().eq("customer_id", fromId);
+  await supabase.from("customers").delete().eq("id", fromId);
+  revalidatePath("/customers");
+  revalidatePath("/settings");
+  revalidatePath(`/customers/${toId}`);
+}

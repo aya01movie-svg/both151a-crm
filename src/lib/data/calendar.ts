@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { toJstDateString, toJstTimeString, jstDateRangeToUtcIso } from "@/lib/date";
+import { listStoreEvents, listClosedDays, listHolidays, resolveEventDatesForMonth } from "@/lib/data/events";
 
 export type CalendarVisitEntry = {
   id: string;
@@ -36,6 +37,11 @@ export type CalendarDayData = {
   reservations: CalendarReservationEntry[];
   birthdays: CalendarBirthdayEntry[];
   bottleExpiries: CalendarBottleEntry[];
+  events: { id: string; title: string; emoji: string; event_type: string }[];
+  isHoliday: boolean;
+  holidayName: string | null;
+  isClosedDay: boolean;
+  closedNote: string | null;
   totalAmount: number;
   totalTip: number;
 };
@@ -59,6 +65,11 @@ function emptyDay(date: string): CalendarDayData {
     reservations: [],
     birthdays: [],
     bottleExpiries: [],
+    events: [],
+    isHoliday: false,
+    holidayName: null,
+    isClosedDay: false,
+    closedNote: null,
     totalAmount: 0,
     totalTip: 0,
   };
@@ -218,6 +229,29 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
       customerName: b.customers?.display_name ?? "",
       bottleLabel: b.bottle_type || b.bottle_name,
     });
+  }
+
+  // イベント・祝日・店休日を並行取得してカレンダーマスに反映する
+  const [storeEvents, closedDaysData, holidaysData] = await Promise.all([
+    listStoreEvents(),
+    listClosedDays(monthStart, monthEnd),
+    listHolidays(monthStart, monthEnd),
+  ]);
+
+  const eventByDate = resolveEventDatesForMonth(storeEvents, year, month);
+  for (const [dateStr, evList] of eventByDate) {
+    const day = days[dateStr];
+    if (day) day.events.push(...evList);
+  }
+
+  for (const h of holidaysData) {
+    const day = days[h.date];
+    if (day) { day.isHoliday = true; day.holidayName = h.name; }
+  }
+
+  for (const cd of closedDaysData) {
+    const day = days[cd.date];
+    if (day) { day.isClosedDay = true; day.closedNote = cd.note; }
   }
 
   return { year, month, days, monthTotalAmount, monthTotalTip };

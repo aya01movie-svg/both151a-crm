@@ -333,3 +333,36 @@ export type Database = {
     };
   };
 };
+
+// v1.1 追加テーブル（型定義）
+export type StoreEventRow = {
+  id: string;
+  title: string;
+  emoji: string;
+  event_type: string;
+  schedule_type: string;
+  start_date: string | null;
+  end_date: string | null;
+  annual_month: number | null;
+  annual_day: number | null;
+  weekly_day: number | null;
+  url: string | null;
+  memo: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ClosedDayRow = {
+  id: string;
+  date: string;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type HolidayRow = {
+  date: string;
+  name: string;
+};

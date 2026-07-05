@@ -113,9 +113,15 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
             day.visits.length > 0 ||
             day.reservations.length > 0 ||
             day.birthdays.length > 0 ||
-            day.bottleExpiries.length > 0;
+            day.bottleExpiries.length > 0 ||
+            day.events.length > 0 ||
+            day.isHoliday ||
+            day.isClosedDay;
 
-          const dayOfWeek = new Date(dateStr).getUTCDay(); // 0=日, 6=土
+          // RC1修正: new Date(dateStr).getUTCDay() ではなく日付文字列を直接パースして
+          // ローカルタイムゾーン依存を排除する（日曜が黒になるバグの原因）
+          const [dy, dm, dd] = dateStr.split("-").map(Number);
+          const dayOfWeek = new Date(dy, dm - 1, dd).getDay(); // ローカル日付でOK（年月日を直接指定するため）
           const isSunday = dayOfWeek === 0;
           const isSaturday = dayOfWeek === 6;
 
@@ -137,6 +143,8 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                   ? "border-gold bg-gold/10"
                   : isToday
                   ? "border-navy bg-white"
+                  : day.isClosedDay
+                  ? "border-danger/20 bg-[#fff0f0] hover:border-danger/30"
                   : "border-navy/5 bg-white hover:border-navy/20"
               }`}
             >
@@ -144,6 +152,17 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 {dayNum}
               </span>
               <div className="mt-1 flex flex-col gap-0.5">
+                {day.isClosedDay && (
+                  <span className="text-[10px] font-bold text-danger truncate">🚫休</span>
+                )}
+                {day.isHoliday && !day.isClosedDay && (
+                  <span className="text-[10px] font-bold text-danger/70 truncate">🔴祝</span>
+                )}
+                {day.events.slice(0, 2).map((ev) => (
+                  <span key={ev.id} className="text-[10px] font-bold text-navy/60 truncate">
+                    {ev.emoji}
+                  </span>
+                ))}
                 {day.visits.length > 0 && (
                   <span className="text-[10px] font-bold text-success truncate">
                     来{day.visits.length}件
@@ -156,7 +175,7 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 )}
                 {day.birthdays.length > 0 && (
                   <span className="text-[10px] font-bold text-[#7a4fa3] truncate">
-                    🎉{day.birthdays.length}
+                    🎂{day.birthdays.length}
                   </span>
                 )}
                 {day.bottleExpiries.length > 0 && (
@@ -231,21 +250,44 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
             )}
             <ul className="flex flex-col gap-1 mb-3">
               {selectedDay.birthdays.map((b) => (
-                <li key={b.id} className="text-sm">🎉 {b.customerName}</li>
+                <li key={b.id} className="text-sm">🎂 {b.customerName}</li>
               ))}
             </ul>
 
             <p className="text-xs font-bold text-navy/50 mb-1">ボトル期限</p>
             {selectedDay.bottleExpiries.length === 0 && (
-              <p className="text-navy/40 text-sm">対象のボトルはありません。</p>
+              <p className="text-navy/40 text-sm mb-2">対象のボトルはありません。</p>
             )}
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-1 mb-3">
               {selectedDay.bottleExpiries.map((b) => (
                 <li key={b.id} className="text-sm">
                   🍷 {b.customerName}（{b.bottleLabel}）
                 </li>
               ))}
             </ul>
+
+            {(selectedDay.isHoliday || selectedDay.isClosedDay || selectedDay.events.length > 0) && (
+              <>
+                <p className="text-xs font-bold text-navy/50 mb-1">イベント・休日</p>
+                <ul className="flex flex-col gap-1.5">
+                  {selectedDay.isClosedDay && (
+                    <li className="text-sm font-bold text-danger">
+                      🚫 店休日{selectedDay.closedNote ? ` — ${selectedDay.closedNote}` : ""}
+                    </li>
+                  )}
+                  {selectedDay.isHoliday && (
+                    <li className="text-sm font-bold text-danger/80">
+                      🔴 {selectedDay.holidayName}（祝日）
+                    </li>
+                  )}
+                  {selectedDay.events.map((ev) => (
+                    <li key={ev.id} className="text-sm text-navy">
+                      {ev.emoji} {ev.title}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </Card>
         </div>
       )}

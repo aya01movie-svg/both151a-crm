@@ -383,14 +383,34 @@ export function VisitForm({
                     />
                     <div>
                       <span className="block text-xs font-bold text-navy/50 mb-1">誕生日（新規登録・任意）</span>
-                      <input
-                        type="date"
-                        value={draft.representativeBirthday}
-                        onChange={(e) =>
-                          setDraft((d) => ({ ...d, representativeBirthday: e.target.value }))
-                        }
-                        className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
-                      />
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={draft.representativeBirthday.slice(5, 7) || ""}
+                          onChange={(e) => {
+                            const d = draft.representativeBirthday.slice(8, 10) || "01";
+                            setDraft((prev) => ({ ...prev, representativeBirthday: e.target.value ? `2000-${e.target.value}-${d}` : "" }));
+                          }}
+                          className="min-h-11 rounded-app border-2 border-navy/10 bg-white px-2 text-sm text-navy focus:outline-none focus:border-gold"
+                        >
+                          <option value="">月</option>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((mn) => (
+                            <option key={mn} value={String(mn).padStart(2, "0")}>{mn}月</option>
+                          ))}
+                        </select>
+                        <select
+                          value={draft.representativeBirthday.slice(8, 10) || ""}
+                          onChange={(e) => {
+                            const mo = draft.representativeBirthday.slice(5, 7) || "01";
+                            setDraft((prev) => ({ ...prev, representativeBirthday: e.target.value ? `2000-${mo}-${e.target.value}` : "" }));
+                          }}
+                          className="min-h-11 rounded-app border-2 border-navy/10 bg-white px-2 text-sm text-navy focus:outline-none focus:border-gold"
+                        >
+                          <option value="">日</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((dd) => (
+                            <option key={dd} value={String(dd).padStart(2, "0")}>{dd}日</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 )}

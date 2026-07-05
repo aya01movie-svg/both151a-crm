@@ -52,12 +52,42 @@ export function CustomerEditForm({ customer }: { customer: Customer }) {
         <TextField label="ふりがな" value={kana} onChange={(e) => setKana(e.target.value)} />
         <TextField label="本名（任意）" value={realName} onChange={(e) => setRealName(e.target.value)} />
       </div>
-      <TextField
-        label="誕生日"
-        type="date"
-        value={birthday}
-        onChange={(e) => setBirthday(e.target.value)}
-      />
+      <div>
+        <span className="block text-sm font-bold text-navy/70 mb-1.5">誕生日（月・日のみ）</span>
+        <div className="flex items-center gap-2">
+          <select
+            value={birthday.slice(5, 7) || ""}
+            onChange={(e) => {
+              const d = birthday.slice(8, 10) || "01";
+              setBirthday(e.target.value ? `2000-${e.target.value}-${d}` : "");
+            }}
+            className="min-h-12 rounded-app border-2 border-navy/10 bg-white px-3 text-base text-navy focus:outline-none focus:border-gold"
+          >
+            <option value="">月を選択</option>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((mn) => (
+              <option key={mn} value={String(mn).padStart(2, "0")}>{mn}月</option>
+            ))}
+          </select>
+          <select
+            value={birthday.slice(8, 10) || ""}
+            onChange={(e) => {
+              const mo = birthday.slice(5, 7) || "01";
+              setBirthday(e.target.value ? `2000-${mo}-${e.target.value}` : "");
+            }}
+            className="min-h-12 rounded-app border-2 border-navy/10 bg-white px-3 text-base text-navy focus:outline-none focus:border-gold"
+          >
+            <option value="">日を選択</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((dd) => (
+              <option key={dd} value={String(dd).padStart(2, "0")}>{dd}日</option>
+            ))}
+          </select>
+          {birthday && (
+            <button type="button" onClick={() => setBirthday("")} className="text-navy/30 text-sm underline">
+              クリア
+            </button>
+          )}
+        </div>
+      </div>
       <label className="block">
         <span className="block text-sm font-bold text-navy/70 mb-1.5">メモ</span>
         <textarea

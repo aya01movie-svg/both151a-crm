@@ -3,15 +3,17 @@ import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { listTags } from "@/lib/data/tags";
 import { listStaff } from "@/lib/data/staff";
 import { listAuditLogs } from "@/lib/data/audit";
+import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { TagManager } from "@/components/settings/TagManager";
 import { StaffManager } from "@/components/settings/StaffManager";
+import { CustomerManagePanel } from "@/components/settings/CustomerManagePanel";
+import { EventManagePanel } from "@/components/settings/EventManagePanel";
+import { ClosedDayPanel } from "@/components/settings/ClosedDayPanel";
+import { listStoreEvents, listClosedDays } from "@/lib/data/events";
 import { formatDateTime } from "@/lib/date";
 
-// RC(v1.1)修正: 本番環境でSupabaseからの取得結果がキャッシュされ、
-// 来店登録・集計が画面に反映されないことがあったため、このページは
-// 常に最新データを取得するよう明示的に動的レンダリングを強制する。
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -24,6 +26,27 @@ export default async function SettingsPage() {
   const staff = isAdmin ? await listStaff() : [];
   const auditLogs = isAdmin ? await listAuditLogs(50) : [];
 
+  const events = await listStoreEvents();
+  const now = new Date();
+  // 前後3ヶ月分の店休日を取得
+  const cdFrom = new Date(now); cdFrom.setMonth(cdFrom.getMonth() - 1);
+  const cdTo   = new Date(now); cdTo.setMonth(cdTo.getMonth() + 3);
+  const closedDays = await listClosedDays(
+    cdFrom.toISOString().slice(0, 10),
+    cdTo.toISOString().slice(0, 10)
+  );
+
+  let customersForManage: { id: string; display_name: string; kana: string | null; visit_count: number }[] = [];
+  if (isAdmin) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("customers")
+      .select("id, display_name, kana, visit_count")
+      .eq("hidden", false)
+      .order("display_name", { ascending: true })
+      .limit(500);
+    customersForManage = (data ?? []) as typeof customersForManage;
+  }
   return (
     <AppShell title="設定" staffName={profile.display_name} role={profile.role}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -101,6 +124,31 @@ export default async function SettingsPage() {
                 </li>
               ))}
             </ul>
+          </Card>
+        )}
+
+        {isAdmin && (
+          <Card>
+            <CardTitle>🎉 イベント管理</CardTitle>
+            <EventManagePanel events={events} />
+          </Card>
+        )}
+
+        {isAdmin && (
+          <Card>
+            <CardTitle>🚫 店休日管理</CardTitle>
+            <ClosedDayPanel closedDays={closedDays} />
+          </Card>
+        )}
+
+        {isAdmin && (
+          <Card className="lg:col-span-2">
+            <CardTitle>⚠️ 顧客整理（管理者専用）</CardTitle>
+            <p className="text-xs text-navy/50 mb-3">
+              誤登録・重複顧客の削除や統合ができます。削除は元に戻せません。
+              営業中の誤操作を防ぐため、この画面（設定ページ）からのみ実行できます。
+            </p>
+            <CustomerManagePanel customers={customersForManage} />
           </Card>
         )}
       </div>

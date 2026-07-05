@@ -19,8 +19,8 @@ export function Header({ title, staffName }: HeaderProps) {
         <Image
           src="/icons/matty-icon-96.png"
           alt=""
-          width={36}
-          height={36}
+          width={44}
+          height={44}
           className="rounded-full shrink-0"
         />
         <span className="font-black text-lg tracking-tight shrink-0">MATTY</span>
