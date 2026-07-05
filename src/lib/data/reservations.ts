@@ -43,20 +43,31 @@ export async function listReservations(): Promise<{
   })[];
 
   const ids = rows.map((r) => r.id);
-  let membersByReservation = new Map<string, string[]>();
+  const membersByReservation = new Map<string, string[]>();
   if (ids.length > 0) {
-    const { data: members } = await supabase
+    const { data: memberRowsRes } = await supabase
       .from("reservation_members")
-      .select("reservation_id, customers(display_name)")
+      .select("reservation_id, customer_id")
       .in("reservation_id", ids);
-    membersByReservation = new Map();
-    for (const m of (members ?? []) as unknown as {
-      reservation_id: string;
-      customers: { display_name: string } | null;
-    }[]) {
-      const list = membersByReservation.get(m.reservation_id) ?? [];
-      if (m.customers) list.push(m.customers.display_name);
-      membersByReservation.set(m.reservation_id, list);
+
+    const memberCIds = [...new Set(
+      (memberRowsRes ?? []).map((m: { customer_id: string }) => m.customer_id)
+    )];
+    if (memberCIds.length > 0) {
+      const { data: memberCData } = await supabase
+        .from("customers")
+        .select("id, display_name")
+        .in("id", memberCIds);
+      const mNameById = new Map(
+        (memberCData ?? []).map((c: { id: string; display_name: string }) => [c.id, c.display_name])
+      );
+      for (const m of (memberRowsRes ?? []) as { reservation_id: string; customer_id: string }[]) {
+        const name = mNameById.get(m.customer_id);
+        if (!name) continue;
+        const list = membersByReservation.get(m.reservation_id) ?? [];
+        list.push(name);
+        membersByReservation.set(m.reservation_id, list);
+      }
     }
   }
 
@@ -101,16 +112,20 @@ export async function getReservationDetail(
     supabase.from("customers").select("display_name").eq("id", reservation.customer_id).single(),
     supabase
       .from("reservation_members")
-      .select("customers(display_name)")
+      .select("customer_id")
       .eq("reservation_id", reservationId),
     supabase.from("customer_tags").select("tag_id").eq("customer_id", reservation.customer_id),
   ]);
 
-  const companionNames = ((membersRes.data ?? []) as unknown as {
-    customers: { display_name: string } | null;
-  }[])
-    .map((m) => m.customers?.display_name)
-    .filter((n): n is string => !!n);
+  const memberCIds = (membersRes.data ?? []).map((m: { customer_id: string }) => m.customer_id);
+  let companionNames: string[] = [];
+  if (memberCIds.length > 0) {
+    const { data: mcData } = await supabase
+      .from("customers")
+      .select("id, display_name")
+      .in("id", memberCIds);
+    companionNames = (mcData ?? []).map((c: { display_name: string }) => c.display_name);
+  }
 
   return {
     reservation: reservation as Reservation,

@@ -99,14 +99,19 @@ export async function getLastVisitInfo(
 
   let companionNames: string[] = [];
   if (lastVisit) {
-    const { data: members } = await supabase
+    const { data: memberRows } = await supabase
       .from("visit_members")
-      .select("customers(display_name)")
+      .select("customer_id")
       .eq("visit_id", lastVisit.id)
       .eq("member_type", "companion");
-    companionNames = ((members ?? []) as unknown as { customers: { display_name: string } | null }[])
-      .map((m) => m.customers?.display_name)
-      .filter((n): n is string => !!n);
+    const cIds = (memberRows ?? []).map((m: { customer_id: string }) => m.customer_id);
+    if (cIds.length > 0) {
+      const { data: cData } = await supabase
+        .from("customers")
+        .select("id, display_name")
+        .in("id", cIds);
+      companionNames = (cData ?? []).map((c: { display_name: string }) => c.display_name);
+    }
   }
 
   return {

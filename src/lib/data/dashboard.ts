@@ -100,7 +100,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       .not("birthday", "is", null),
     supabase
       .from("reservations")
-      .select("id, reserved_at, people_count, customers(display_name)")
+      .select("id, reserved_at, people_count, customer_id")
       .eq("status", "reserved")
       .gte("reserved_at", todayStartIso)
       .lt("reserved_at", tomorrowStartIso)
@@ -140,15 +140,27 @@ export async function getDashboardData(): Promise<DashboardData> {
   const bottlesWithin14 = bottleTiers.filter((t: string) => t === "within14").length;
   const bottlesWithin30 = bottleTiers.filter((t: string) => t === "within30").length;
 
-  const todayReservationRows = (todayReservationsRes.data ?? []) as unknown as {
+  // 今日の予約顧客名を2段クエリで取得（ネストembed排除）
+  const todayResRows = (todayReservationsRes.data ?? []) as {
     id: string;
     reserved_at: string;
     people_count: number;
-    customers: { display_name: string } | null;
+    customer_id: string;
   }[];
-  const todayReservations = todayReservationRows.map((r) => ({
+  const todayResCustIds = [...new Set(todayResRows.map((r) => r.customer_id))];
+  const todayResCustNameById = new Map<string, string>();
+  if (todayResCustIds.length > 0) {
+    const { data: trcData } = await supabase
+      .from("customers")
+      .select("id, display_name")
+      .in("id", todayResCustIds);
+    for (const c of (trcData ?? []) as { id: string; display_name: string }[]) {
+      todayResCustNameById.set(c.id, c.display_name);
+    }
+  }
+  const todayReservations = todayResRows.map((r) => ({
     id: r.id,
-    customerName: r.customers?.display_name ?? "不明",
+    customerName: todayResCustNameById.get(r.customer_id) ?? "不明",
     peopleCount: r.people_count,
     time: toJstTimeString(r.reserved_at),
   }));

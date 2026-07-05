@@ -102,7 +102,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
       .lt("visited_at", monthEndIso),
     supabase
       .from("reservations")
-      .select("id, reserved_at, status, memo, customers(display_name)")
+      .select("id, reserved_at, status, memo, customer_id")
       .neq("status", "cancelled")
       .gte("reserved_at", monthStartIso)
       .lt("reserved_at", monthEndIso),
@@ -113,7 +113,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
       .not("birthday", "is", null),
     supabase
       .from("bottles")
-      .select("id, bottle_type, bottle_name, expiry_date, customers(display_name)")
+      .select("id, bottle_type, bottle_name, expiry_date, customer_id")
       .eq("status", "kept")
       .gte("expiry_date", monthStart)
       .lte("expiry_date", monthEnd),
@@ -122,40 +122,69 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
   const visitIds = ((visitsRes.data ?? []) as { id: string }[]).map((v) => v.id);
   const reservationIds = ((reservationsRes.data ?? []) as { id: string }[]).map((r) => r.id);
 
-  const [visitCompanionsRes, reservationCompanionsRes] = await Promise.all([
+  // 同伴者・予約同伴者名を2段クエリで取得（ネストembedは不安定なため）
+  const [visitMemberRows, reservationMemberRows] = await Promise.all([
     visitIds.length > 0
       ? supabase
           .from("visit_members")
-          .select("visit_id, customers(display_name)")
+          .select("visit_id, customer_id")
           .in("visit_id", visitIds)
           .eq("member_type", "companion")
-      : Promise.resolve({ data: [] as unknown[] }),
+      : Promise.resolve({ data: [] as { visit_id: string; customer_id: string }[] }),
     reservationIds.length > 0
       ? supabase
           .from("reservation_members")
-          .select("reservation_id, customers(display_name)")
+          .select("reservation_id, customer_id")
           .in("reservation_id", reservationIds)
-      : Promise.resolve({ data: [] as unknown[] }),
+      : Promise.resolve({ data: [] as { reservation_id: string; customer_id: string }[] }),
   ]);
 
+  // 関連顧客名を一括取得
+  const memberCustomerIds = [...new Set([
+    ...(visitMemberRows.data ?? []).map((m: { customer_id: string }) => m.customer_id),
+    ...(reservationMemberRows.data ?? []).map((m: { customer_id: string }) => m.customer_id),
+  ])];
+  const memberNameById = new Map<string, string>();
+  if (memberCustomerIds.length > 0) {
+    const { data: memberCustomers } = await supabase
+      .from("customers")
+      .select("id, display_name")
+      .in("id", memberCustomerIds);
+    for (const c of (memberCustomers ?? []) as { id: string; display_name: string }[]) {
+      memberNameById.set(c.id, c.display_name);
+    }
+  }
+
   const visitCompanionsByVisit = new Map<string, string[]>();
-  for (const row of (visitCompanionsRes.data ?? []) as unknown as {
-    visit_id: string;
-    customers: { display_name: string } | null;
-  }[]) {
+  for (const row of (visitMemberRows.data ?? []) as { visit_id: string; customer_id: string }[]) {
+    const name = memberNameById.get(row.customer_id);
+    if (!name) continue;
     const list = visitCompanionsByVisit.get(row.visit_id) ?? [];
-    if (row.customers) list.push(row.customers.display_name);
+    list.push(name);
     visitCompanionsByVisit.set(row.visit_id, list);
   }
 
   const reservationCompanionsByReservation = new Map<string, string[]>();
-  for (const row of (reservationCompanionsRes.data ?? []) as unknown as {
-    reservation_id: string;
-    customers: { display_name: string } | null;
-  }[]) {
+  for (const row of (reservationMemberRows.data ?? []) as { reservation_id: string; customer_id: string }[]) {
+    const name = memberNameById.get(row.customer_id);
+    if (!name) continue;
     const list = reservationCompanionsByReservation.get(row.reservation_id) ?? [];
-    if (row.customers) list.push(row.customers.display_name);
+    list.push(name);
     reservationCompanionsByReservation.set(row.reservation_id, list);
+  }
+
+  // 来店・予約の顧客名を2段クエリで取得
+  const reservationRows = (reservationsRes.data ?? []) as { id: string; reserved_at: string; status: string; memo: string | null; customer_id: string }[];
+  const reservationCustomerIds = [...new Set(reservationRows.map((r) => r.customer_id))];
+  const reservationCustomerNameById = new Map<string, string>();
+  if (reservationCustomerIds.length > 0) {
+    const { data: rcData } = await supabase
+      .from("customers")
+      .select("id, display_name")
+      .in("id", reservationCustomerIds);
+    for (const c of (rcData ?? []) as { id: string; display_name: string }[]) {
+      reservationCustomerNameById.set(c.id, c.display_name);
+    }
   }
 
   let monthTotalAmount = 0;
@@ -185,19 +214,13 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     monthTotalTip += v.tip;
   }
 
-  for (const r of (reservationsRes.data ?? []) as unknown as {
-    id: string;
-    reserved_at: string;
-    status: string;
-    memo: string | null;
-    customers: { display_name: string } | null;
-  }[]) {
+  for (const r of reservationRows) {
     const dateStr = toJstDateString(r.reserved_at);
     const day = days[dateStr];
     if (!day) continue;
     day.reservations.push({
       id: r.id,
-      customerName: r.customers?.display_name ?? "",
+      customerName: reservationCustomerNameById.get(r.customer_id) ?? "",
       companionNames: reservationCompanionsByReservation.get(r.id) ?? [],
       time: toJstTimeString(r.reserved_at),
       status: r.status,
@@ -215,18 +238,26 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     day.birthdays.push({ id: c.id, customerName: c.display_name });
   }
 
-  for (const b of (bottlesRes.data ?? []) as unknown as {
-    id: string;
-    bottle_type: string | null;
-    bottle_name: string;
-    expiry_date: string;
-    customers: { display_name: string } | null;
-  }[]) {
+  // ボトル期限の顧客名を2段クエリで取得
+  const bottleRows = (bottlesRes.data ?? []) as { id: string; bottle_type: string | null; bottle_name: string; expiry_date: string; customer_id: string }[];
+  const bottleCustomerIds = [...new Set(bottleRows.map((b) => b.customer_id))];
+  const bottleCustomerNameById = new Map<string, string>();
+  if (bottleCustomerIds.length > 0) {
+    const { data: bcData } = await supabase
+      .from("customers")
+      .select("id, display_name")
+      .in("id", bottleCustomerIds);
+    for (const c of (bcData ?? []) as { id: string; display_name: string }[]) {
+      bottleCustomerNameById.set(c.id, c.display_name);
+    }
+  }
+
+  for (const b of bottleRows) {
     const day = days[b.expiry_date];
     if (!day) continue;
     day.bottleExpiries.push({
       id: b.id,
-      customerName: b.customers?.display_name ?? "",
+      customerName: bottleCustomerNameById.get(b.customer_id) ?? "",
       bottleLabel: b.bottle_type || b.bottle_name,
     });
   }

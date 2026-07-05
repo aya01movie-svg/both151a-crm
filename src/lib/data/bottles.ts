@@ -160,22 +160,36 @@ export async function listBottles(params: {
     );
 
     if (repVisitIds.length > 0) {
+      // RC7修正: customers(display_name) のネストembed は環境によって不安定なため
+      // 2段クエリに分解する（RC8で確認済みの安定パターン）
       const { data: memberRows } = await supabase
         .from("visit_members")
-        .select("visit_id, customer_id, customers(display_name)")
+        .select("visit_id, customer_id")
         .in("visit_id", repVisitIds)
         .eq("member_type", "companion");
 
-      for (const row of (memberRows ?? []) as unknown as {
-        visit_id: string;
-        customers: { display_name: string } | null;
-      }[]) {
-        const primaryId = visitToPrimary.get(row.visit_id);
-        if (!primaryId || !row.customers) continue;
-        const list = companionNamesByCustomer.get(primaryId) ?? [];
-        const name = row.customers.display_name;
-        if (!list.includes(name)) list.push(name);
-        companionNamesByCustomer.set(primaryId, list);
+      const companionCustomerIds = [...new Set(
+        (memberRows ?? []).map((m: { customer_id: string }) => m.customer_id)
+      )];
+
+      if (companionCustomerIds.length > 0) {
+        const { data: companionCustomers } = await supabase
+          .from("customers")
+          .select("id, display_name")
+          .in("id", companionCustomerIds);
+
+        const nameById = new Map(
+          (companionCustomers ?? []).map((c: { id: string; display_name: string }) => [c.id, c.display_name])
+        );
+
+        for (const row of (memberRows ?? []) as { visit_id: string; customer_id: string }[]) {
+          const primaryId = visitToPrimary.get(row.visit_id);
+          const name = nameById.get(row.customer_id);
+          if (!primaryId || !name) continue;
+          const list = companionNamesByCustomer.get(primaryId) ?? [];
+          if (!list.includes(name)) list.push(name);
+          companionNamesByCustomer.set(primaryId, list);
+        }
       }
     }
   }

@@ -231,21 +231,31 @@ export async function getCustomerDetail(
   const primaryVisitRows = (primaryVisitsRes.data ?? []) as Visit[];
   const primaryVisitIds = primaryVisitRows.map((v) => v.id);
 
-  let companionNamesByVisit = new Map<string, string[]>();
+  // 2段クエリ（ネストembedは不安定なため同じ修正パターンを適用）
+  const companionNamesByVisit = new Map<string, string[]>();
   if (primaryVisitIds.length > 0) {
-    const { data: memberRows } = await supabase
+    const { data: memberRows2 } = await supabase
       .from("visit_members")
-      .select("visit_id, member_type, customers(display_name)")
+      .select("visit_id, customer_id")
       .in("visit_id", primaryVisitIds)
       .eq("member_type", "companion");
-    companionNamesByVisit = new Map();
-    for (const row of (memberRows ?? []) as unknown as {
-      visit_id: string;
-      customers: { display_name: string } | null;
-    }[]) {
-      const list = companionNamesByVisit.get(row.visit_id) ?? [];
-      if (row.customers) list.push(row.customers.display_name);
-      companionNamesByVisit.set(row.visit_id, list);
+
+    const cIds = [...new Set((memberRows2 ?? []).map((m: { customer_id: string }) => m.customer_id))];
+    if (cIds.length > 0) {
+      const { data: cCustomers } = await supabase
+        .from("customers")
+        .select("id, display_name")
+        .in("id", cIds);
+      const cNameById = new Map(
+        (cCustomers ?? []).map((c: { id: string; display_name: string }) => [c.id, c.display_name])
+      );
+      for (const row of (memberRows2 ?? []) as { visit_id: string; customer_id: string }[]) {
+        const name = cNameById.get(row.customer_id);
+        if (!name) continue;
+        const list = companionNamesByVisit.get(row.visit_id) ?? [];
+        list.push(name);
+        companionNamesByVisit.set(row.visit_id, list);
+      }
     }
   }
 
