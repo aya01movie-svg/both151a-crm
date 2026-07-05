@@ -26,8 +26,8 @@ export function SideNav({ role }: { role: StaffRole }) {
               href={item.href}
               className={`flex items-center gap-3 rounded-app px-4 py-3 text-sm font-bold transition-colors ${
                 active
-                  ? "bg-navy text-white"
-                  : "text-navy/70 hover:bg-navy/5"
+                  ? "bg-gold text-navy-dark"
+                  : "text-navy/70 hover:bg-gold/10"
               }`}
             >
               <Icon size={20} strokeWidth={2.25} />
@@ -39,15 +39,15 @@ export function SideNav({ role }: { role: StaffRole }) {
 
       <div className="mt-auto flex items-center gap-2 px-4 py-3 text-navy/40">
         <Image
-          src="/icons/cat-icon-96.png"
+          src="/icons/matty-icon-96.png"
           alt=""
           width={24}
           height={24}
           className="rounded-full"
         />
         <div className="leading-tight">
-          <p className="text-xs font-bold">きゃってぃー</p>
-          <p className="text-[10px]">Ver. 1.0.0</p>
+          <p className="text-xs font-bold">MATTY</p>
+          <p className="text-[10px]">Ver. 1.1.0</p>
         </div>
       </div>
     </nav>

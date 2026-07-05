@@ -7,6 +7,12 @@ import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/layout/AppShell";
 import { VisitForm } from "@/components/visits/VisitForm";
 
+// RC(v1.1)修正: 本番環境でSupabaseからの取得結果がキャッシュされ、
+// 来店登録・集計が画面に反映されないことがあったため、このページは
+// 常に最新データを取得するよう明示的に動的レンダリングを強制する。
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type SearchParams = Promise<{ customer?: string; reservation?: string }>;
 
 export default async function NewVisitPage({

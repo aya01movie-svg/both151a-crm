@@ -5,7 +5,7 @@ import type { TimelineEvent } from "@/lib/data/timeline";
 const KIND_META: Record<TimelineEvent["kind"], { emoji: string; color: string }> = {
   first_visit: { emoji: "🎉", color: "text-gold" },
   visit: { emoji: "🍸", color: "text-success" },
-  bottle: { emoji: "🍾", color: "text-warn" },
+  bottle: { emoji: "🍷", color: "text-warn" },
   reservation: { emoji: "📅", color: "text-info" },
   note: { emoji: "📝", color: "text-navy/50" },
   champagne: { emoji: "🥂", color: "text-[#7a4fa3]" },

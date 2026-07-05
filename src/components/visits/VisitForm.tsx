@@ -39,6 +39,7 @@ type DraftShape = {
   representativeCaution: "none" | "caution" | "banned";
   representativeName: string;
   representativeKana: string;
+  representativeBirthday: string;
   companions: CompanionEntry[];
   visitedAt: string;
   peopleCount: number;
@@ -64,6 +65,7 @@ function blankDraft(
     representativeCaution: initialCustomer?.caution_level ?? "none",
     representativeName: initialCustomer?.display_name ?? "",
     representativeKana: "",
+    representativeBirthday: "",
     companions,
     visitedAt: toDateTimeLocalValue(new Date()),
     peopleCount: initialReservation?.peopleCount ?? Math.max(1, companions.length + 1),
@@ -282,6 +284,7 @@ export function VisitForm({
       <input type="hidden" name="is_new_customer" value={isNewCustomer ? "1" : "0"} />
       <input type="hidden" name="new_customer_name" value={draft.representativeName} />
       <input type="hidden" name="new_customer_kana" value={draft.representativeKana} />
+      <input type="hidden" name="new_customer_birthday" value={draft.representativeBirthday} />
       {initialReservation && (
         <input type="hidden" name="reservation_id" value={initialReservation.id} />
       )}
@@ -368,15 +371,28 @@ export function VisitForm({
                   }
                 />
                 {draft.representativeName.trim() && (
-                  <input
-                    type="text"
-                    value={draft.representativeKana}
-                    onChange={(e) =>
-                      setDraft((d) => ({ ...d, representativeKana: e.target.value }))
-                    }
-                    placeholder="ふりがな（新規登録の場合・任意）"
-                    className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
-                  />
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="text"
+                      value={draft.representativeKana}
+                      onChange={(e) =>
+                        setDraft((d) => ({ ...d, representativeKana: e.target.value }))
+                      }
+                      placeholder="ふりがな（新規登録の場合・任意）"
+                      className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
+                    />
+                    <div>
+                      <span className="block text-xs font-bold text-navy/50 mb-1">誕生日（新規登録・任意）</span>
+                      <input
+                        type="date"
+                        value={draft.representativeBirthday}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, representativeBirthday: e.target.value }))
+                        }
+                        className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             )}

@@ -1,20 +1,31 @@
 @import "tailwindcss";
 
 /*
-  both151'A CRM デザイントークン
-  第20章・第34章「UIデザインルール」に準拠
+  MATTY デザイントークン
   背景: 白 / 薄いベージュ
-  アクセント: ネイビー / ゴールド
+  ブランドカラー: MATTYのアイコン背景と同じ黄色（--color-brand が唯一の基準値）
   警告: オレンジ　期限切れ: 赤　成功: グリーン
   角丸: 12px　ボタン高さ: 56px以上　文字サイズ: 16px以上
+
+  【テーマカラーの変更方法】
+  将来アイコン（MATTY）のデザインが変わった場合は、--color-brand の値だけを
+  変更してください。ヘッダー・アクセントボタン（gold系）はすべて
+  --color-brand を参照しているため、1箇所の変更で全体に反映されます。
 */
 
 :root {
   --color-navy: #16213e;
   --color-navy-dark: #0d1526;
   --color-navy-light: #2a3a63;
-  --color-gold: #c9974a;
-  --color-gold-dark: #a97c34;
+
+  /* ブランドカラーの基準値（MATTYのアイコン背景の黄色 rgb(254,236,3)） */
+  --color-brand: #FEEC03;
+  --color-brand-dark: #d9c900;
+
+  /* gold系はブランドカラーをそのまま使う（既存のボタン・強調表示すべてに反映される） */
+  --color-gold: var(--color-brand);
+  --color-gold-dark: var(--color-brand-dark);
+
   --color-beige: #f6f1e7;
   --color-beige-dark: #ece4d2;
   --color-warn: #e07b2b;
@@ -33,6 +44,8 @@
   --color-navy: var(--color-navy);
   --color-navy-dark: var(--color-navy-dark);
   --color-navy-light: var(--color-navy-light);
+  --color-brand: var(--color-brand);
+  --color-brand-dark: var(--color-brand-dark);
   --color-gold: var(--color-gold);
   --color-gold-dark: var(--color-gold-dark);
   --color-beige: var(--color-beige);

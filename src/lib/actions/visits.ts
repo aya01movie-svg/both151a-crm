@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { searchCustomerNames, createVisit, getLastVisitInfo, type NewVisitInput } from "@/lib/data/visits";
 import { toErrorMessage } from "@/lib/error-message";
 import { jstLocalToUtcIso } from "@/lib/date";
@@ -28,6 +29,10 @@ export async function getLastVisitInfoAction(customerId: string) {
  * 来店登録から完全に削除した（顧客詳細の「ボトル追加」からのみ登録する）。
  * これにより来店登録の保存は「顧客・来店・同伴者・タグ・予約更新」のみを
  * 1トランザクションで行うシンプルな処理となった。
+ *
+ * v1.1修正: 保存成功後にホーム/カレンダー等のキャッシュを明示的に無効化し、
+ * 本番環境で集計・カレンダー表示が更新されない不具合を修正した。
+ * また、来店登録から新規顧客を作成する場合も誕生日を入力できるようにした。
  */
 export async function saveVisitAction(
   _prevState: SaveVisitState,
@@ -42,6 +47,7 @@ export async function saveVisitAction(
     const customerId = String(formData.get("customer_id") ?? "");
     const newCustomerName = String(formData.get("new_customer_name") ?? "").trim();
     const newCustomerKana = String(formData.get("new_customer_kana") ?? "").trim();
+    const newCustomerBirthday = String(formData.get("new_customer_birthday") ?? "").trim();
 
     if (!isNewCustomer && !customerId) {
       return { error: "代表者を選択してください。", success: false, customerId: null, intent };
@@ -62,6 +68,7 @@ export async function saveVisitAction(
       isNewCustomer,
       newCustomerName: newCustomerName || undefined,
       newCustomerKana: newCustomerKana || undefined,
+      newCustomerBirthday: newCustomerBirthday || undefined,
       visitedAt: (() => {
         const raw = String(formData.get("visited_at") ?? "").trim();
         return raw ? jstLocalToUtcIso(raw) : new Date().toISOString();
@@ -81,6 +88,14 @@ export async function saveVisitAction(
     };
 
     const result = await createVisit(input);
+
+    // v1.1修正: ホーム・カレンダー・顧客詳細・顧客一覧のキャッシュを確実に無効化する
+    revalidatePath("/dashboard");
+    revalidatePath("/calendar");
+    revalidatePath("/customers");
+    revalidatePath(`/customers/${result.customerId}`);
+    revalidatePath("/reservations");
+
     return {
       error: null,
       success: true,

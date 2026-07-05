@@ -29,9 +29,11 @@ export async function createClient() {
         },
       },
       global: {
-        // Supabase未設定・通信断時に無限待機しないためのタイムアウト（第31章 通信エラー対策）
+        // Supabase未設定・通信断時に無限待機しないためのタイムアウト（通信エラー対策）
+        // + v1.1修正: 本番環境でSupabaseの応答がキャッシュされ、来店登録直後の
+        // 集計やカレンダー表示が更新されない不具合があったため、明示的にキャッシュ無効化する。
         fetch: (input, init) =>
-          fetch(input, { ...init, signal: AbortSignal.timeout(8000) }),
+          fetch(input, { ...init, cache: "no-store", signal: AbortSignal.timeout(8000) }),
       },
     }
   );

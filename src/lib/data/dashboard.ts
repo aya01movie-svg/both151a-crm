@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Customer } from "@/types/database";
 import { computePace } from "@/lib/pace";
 import { getExpiryTier } from "@/lib/bottle-expiry";
 import { jstDateRangeToUtcIso, toJstDateString } from "@/lib/date";
@@ -7,27 +6,24 @@ import { jstDateRangeToUtcIso, toJstDateString } from "@/lib/date";
 export type DashboardData = {
   todayAmount: number;
   todayTip: number;
-  todayVisitCount: number; // 組数
-  todayPeopleCount: number; // 人数
+  todayVisitCount: number;
+  todayPeopleCount: number;
+  yesterdayAmount: number;
   monthAmount: number;
   monthTip: number;
   monthVisitCount: number;
+  monthPeopleCount: number;
   todayReservationCount: number;
-  /** ボトル期限の色分け件数（ご指定仕様：期限切れ/7日以内/14日以内/30日以内） */
   bottlesExpired: number;
   bottlesWithin7: number;
   bottlesWithin14: number;
   bottlesWithin30: number;
-  tomorrowBirthdays: Pick<Customer, "id" | "display_name">[];
-  todayBirthdays: Pick<Customer, "id" | "display_name">[];
-  recentlyViewed: Pick<
-    Customer,
-    "id" | "display_name" | "rank" | "last_visit_at" | "favorite"
-  >[];
-  frequentVisitors: {
+  /** 直近7日以内（今日を含む）に誕生日がある顧客 */
+  upcomingBirthdays: {
     id: string;
     display_name: string;
-    visitCount: number;
+    birthday: string;
+    daysUntil: number;
   }[];
   vipNeedingFollowUp: {
     id: string;
@@ -38,34 +34,43 @@ export type DashboardData = {
 };
 
 /**
- * ホーム画面（第3章・第14章・第25章・第27章・第36章・第37章）の実データ集計。
- * 「本日の予約件数」は予約管理（Phase C）と接続済み。
- * 「来店ペースを超えて来店していないVIP・お気に入り」（第25章・第27章）は
- * computePace() による平均来店周期（累計来店回数・初回/最終来店日から算出）を用いて判定する。
- *
- * RC8修正: 「今日」の範囲はサーバーのUTC日付ではなく日本時間（Asia/Tokyo）基準で
- * 判定する（深夜営業のバーでは特に、UTC基準だと日付がズレて集計が崩れるため）。
+ * ホーム画面の実データ集計。
+ * v1.1修正:
+ *  - 昨日売上を追加（今日チップ→昨日売上に変更）
+ *  - 誕生日を直近7日（JST基準）に変更
+ *  - 月集計クエリの終端（lt nextMonth）を追加して翌月データが混入しないよう修正
+ *  - 誕生日・昨日の日付計算をJST基準に統一
+ *  - 最近見た顧客・最近よく来るお客様の集計を削除（ホームから削除）
  */
 export async function getDashboardData(): Promise<DashboardData> {
   const supabase = await createClient();
 
   const now = new Date();
   const todayJst = toJstDateString(now.toISOString());
+
+  // 今日
   const { startIso: todayStartIso, endIso: tomorrowStartIso } = jstDateRangeToUtcIso(todayJst);
+
+  // 昨日
+  const yesterdayJst = toJstDateString(new Date(now.getTime() - 86400000).toISOString());
+  const { startIso: yesterdayStartIso, endIso: yesterdayEndIso } = jstDateRangeToUtcIso(yesterdayJst);
+
+  // 今月（翌月初を終端として指定し、来月分が混入しないようにする）
   const monthStart = `${todayJst.slice(0, 7)}-01`;
   const { startIso: monthStartIso } = jstDateRangeToUtcIso(monthStart);
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const threeMonthsAgo = new Date(now);
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  const [y, m] = todayJst.slice(0, 7).split("-").map(Number);
+  const nextMonthStr =
+    m === 12
+      ? `${y + 1}-01-01`
+      : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+  const { startIso: nextMonthStartIso } = jstDateRangeToUtcIso(nextMonthStr);
 
   const [
     todayVisitsRes,
+    yesterdayVisitsRes,
     monthVisitsRes,
     bottlesRes,
     customersForBirthdayRes,
-    recentViewsRes,
-    frequentVisitsRes,
     todayReservationsRes,
     paceCandidatesRes,
   ] = await Promise.all([
@@ -77,35 +82,28 @@ export async function getDashboardData(): Promise<DashboardData> {
       .lt("visited_at", tomorrowStartIso),
     supabase
       .from("visits")
-      .select("amount, tip")
+      .select("amount")
       .eq("invalidated", false)
-      .gte("visited_at", monthStartIso),
+      .gte("visited_at", yesterdayStartIso)
+      .lt("visited_at", yesterdayEndIso),
+    supabase
+      .from("visits")
+      .select("amount, tip, people_count")
+      .eq("invalidated", false)
+      .gte("visited_at", monthStartIso)
+      .lt("visited_at", nextMonthStartIso),
     supabase.from("bottles").select("expiry_date, status").eq("status", "kept"),
-    // 誕生日はyear非依存で月日一致を見る必要があるため、必要列だけ取得してJS側で判定する
-    // （customersは500件規模のためDB→アプリ間の転送コストも小さい）
     supabase
       .from("customers")
       .select("id, display_name, birthday")
       .eq("hidden", false)
       .not("birthday", "is", null),
     supabase
-      .from("customer_views")
-      .select("customer_id, viewed_at")
-      .order("viewed_at", { ascending: false })
-      .limit(40),
-    supabase
-      .from("visits")
-      .select("primary_customer_id")
-      .eq("invalidated", false)
-      .gte("visited_at", threeMonthsAgo.toISOString()),
-    supabase
       .from("reservations")
       .select("id", { count: "exact", head: true })
       .eq("status", "reserved")
       .gte("reserved_at", todayStartIso)
       .lt("reserved_at", tomorrowStartIso),
-    // 第25章・第27章: VIP または お気に入りのうち、来店実績が2回以上ある顧客を
-    // 来店ペース判定の候補として取得する（判定自体はJS側のcomputePaceで行う）
     supabase
       .from("customers")
       .select("id, display_name, last_visit_at, first_visit_at, visit_count, rank, favorite")
@@ -114,84 +112,56 @@ export async function getDashboardData(): Promise<DashboardData> {
       .gte("visit_count", 2),
   ]);
 
-  const todayVisits = todayVisitsRes.data ?? [];
-  const monthVisits = monthVisitsRes.data ?? [];
+  const todayVisits = (todayVisitsRes.data ?? []) as {
+    amount: number;
+    tip: number;
+    people_count: number;
+  }[];
+  const yesterdayVisits = (yesterdayVisitsRes.data ?? []) as { amount: number }[];
+  const monthVisits = (monthVisitsRes.data ?? []) as {
+    amount: number;
+    tip: number;
+    people_count: number;
+  }[];
   const bottles = bottlesRes.data ?? [];
 
   const todayAmount = todayVisits.reduce((sum, v) => sum + v.amount, 0);
   const todayTip = todayVisits.reduce((sum, v) => sum + v.tip, 0);
   const todayPeopleCount = todayVisits.reduce((sum, v) => sum + v.people_count, 0);
+  const yesterdayAmount = yesterdayVisits.reduce((sum, v) => sum + v.amount, 0);
   const monthAmount = monthVisits.reduce((sum, v) => sum + v.amount, 0);
   const monthTip = monthVisits.reduce((sum, v) => sum + v.tip, 0);
+  const monthPeopleCount = monthVisits.reduce((sum, v) => sum + v.people_count, 0);
 
-  // ボトル期限の色分け件数（ご指定仕様：排他的な4段階。31日以上の🟢は通知対象外のため集計しない）
   const bottleTiers = bottles.map((b) => getExpiryTier(b.expiry_date));
   const bottlesExpired = bottleTiers.filter((t) => t === "expired").length;
   const bottlesWithin7 = bottleTiers.filter((t) => t === "within7").length;
   const bottlesWithin14 = bottleTiers.filter((t) => t === "within14").length;
   const bottlesWithin30 = bottleTiers.filter((t) => t === "within30").length;
 
-  const tomorrowMonth = tomorrow.getMonth() + 1;
-  const tomorrowDate = tomorrow.getDate();
-  const todayMonth = now.getMonth() + 1;
-  const todayDate = now.getDate();
-  const birthdayCustomers = customersForBirthdayRes.data ?? [];
-  const tomorrowBirthdays = birthdayCustomers.filter((c) => {
-    if (!c.birthday) return false;
-    const [, m, d] = c.birthday.split("-").map(Number);
-    return m === tomorrowMonth && d === tomorrowDate;
-  });
-  // 第13章: 当日は「本日誕生日」として別枠で表示する
-  const todayBirthdays = birthdayCustomers.filter((c) => {
-    if (!c.birthday) return false;
-    const [, m, d] = c.birthday.split("-").map(Number);
-    return m === todayMonth && d === todayDate;
-  });
+  // 誕生日: JST基準で今日から7日以内（today〜today+6）
+  const todayYmd = Number(todayJst.slice(0, 4));
+  const todayM = Number(todayJst.slice(5, 7));
+  const todayD = Number(todayJst.slice(8, 10));
+  const todayDateUTC = new Date(Date.UTC(todayYmd, todayM - 1, todayD));
 
-  // 最近見た顧客: customer_views から重複除去して最大10件
-  const viewedIds: string[] = [];
-  for (const row of recentViewsRes.data ?? []) {
-    if (!viewedIds.includes(row.customer_id)) viewedIds.push(row.customer_id);
-    if (viewedIds.length >= 10) break;
+  const upcomingBirthdays: DashboardData["upcomingBirthdays"] = [];
+  for (const c of customersForBirthdayRes.data ?? []) {
+    if (!c.birthday) continue;
+    const bm = Number(c.birthday.slice(5, 7));
+    const bd = Number(c.birthday.slice(8, 10));
+    // 今年・来年それぞれの誕生日を確認する
+    for (const yr of [todayYmd, todayYmd + 1]) {
+      const bdDate = new Date(Date.UTC(yr, bm - 1, bd));
+      const diff = Math.round((bdDate.getTime() - todayDateUTC.getTime()) / 86400000);
+      if (diff >= 0 && diff <= 6) {
+        upcomingBirthdays.push({ id: c.id, display_name: c.display_name, birthday: c.birthday, daysUntil: diff });
+        break;
+      }
+    }
   }
-  let recentlyViewed: DashboardData["recentlyViewed"] = [];
-  if (viewedIds.length > 0) {
-    const { data } = await supabase
-      .from("customers")
-      .select("id, display_name, rank, last_visit_at, favorite")
-      .in("id", viewedIds);
-    const byId = new Map((data ?? []).map((c) => [c.id, c]));
-    recentlyViewed = viewedIds.map((id) => byId.get(id)).filter(Boolean) as DashboardData["recentlyViewed"];
-  }
+  upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
 
-  // 最近よく来るお客様（過去3か月・第37章）
-  const visitCountByCustomer = new Map<string, number>();
-  for (const row of frequentVisitsRes.data ?? []) {
-    visitCountByCustomer.set(
-      row.primary_customer_id,
-      (visitCountByCustomer.get(row.primary_customer_id) ?? 0) + 1
-    );
-  }
-  const topCustomerIds = [...visitCountByCustomer.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([id]) => id);
-
-  let frequentVisitors: DashboardData["frequentVisitors"] = [];
-  if (topCustomerIds.length > 0) {
-    const { data } = await supabase
-      .from("customers")
-      .select("id, display_name")
-      .in("id", topCustomerIds);
-    const nameById = new Map((data ?? []).map((c) => [c.id, c.display_name]));
-    frequentVisitors = topCustomerIds.map((id) => ({
-      id,
-      display_name: nameById.get(id) ?? "",
-      visitCount: visitCountByCustomer.get(id) ?? 0,
-    }));
-  }
-
-  // 第25章・第27章: 平均来店周期を超えて来店していないVIP・お気に入りを抽出する
   const vipNeedingFollowUp = (paceCandidatesRes.data ?? [])
     .map((c) => {
       const pace = computePace(c);
@@ -212,18 +182,17 @@ export async function getDashboardData(): Promise<DashboardData> {
     todayTip,
     todayVisitCount: todayVisits.length,
     todayPeopleCount,
+    yesterdayAmount,
     monthAmount,
     monthTip,
     monthVisitCount: monthVisits.length,
+    monthPeopleCount,
     todayReservationCount: todayReservationsRes.count ?? 0,
     bottlesExpired,
     bottlesWithin7,
     bottlesWithin14,
     bottlesWithin30,
-    tomorrowBirthdays,
-    todayBirthdays,
-    recentlyViewed,
-    frequentVisitors,
+    upcomingBirthdays,
     vipNeedingFollowUp,
   };
 }

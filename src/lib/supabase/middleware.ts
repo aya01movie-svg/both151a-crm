@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
         // Supabase未設定（ダミー値）や通信断で無限に待機しないよう、
         // 認証確認は5秒でタイムアウトさせる。
         fetch: (input, init) =>
-          fetch(input, { ...init, signal: AbortSignal.timeout(5000) }),
+          fetch(input, { ...init, cache: "no-store", signal: AbortSignal.timeout(5000) }),
       },
     }
   );

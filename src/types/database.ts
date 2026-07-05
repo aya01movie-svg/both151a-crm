@@ -310,6 +310,7 @@ export type Database = {
           p_reservation_id: string | null;
           p_new_customer_kana: string | null;
           p_companion_kanas: string[];
+          p_new_customer_birthday: string | null;
         };
         Returns: { visit_id: string; customer_id: string };
       };

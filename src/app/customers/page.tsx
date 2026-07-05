@@ -6,6 +6,12 @@ import { CustomerSearchBar } from "@/components/customers/CustomerSearchBar";
 import { CustomerCard } from "@/components/customers/CustomerCard";
 import { LinkButton } from "@/components/ui/Button";
 
+// RC(v1.1)修正: 本番環境でSupabaseからの取得結果がキャッシュされ、
+// 来店登録・集計が画面に反映されないことがあったため、このページは
+// 常に最新データを取得するよう明示的に動的レンダリングを強制する。
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type SearchParams = Promise<{ q?: string; page?: string; favorite?: string }>;
 
 export default async function CustomersPage({

@@ -1,13 +1,27 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { AppShell } from "@/components/layout/AppShell";
-import { Card, CardTitle } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
-import { daysSince } from "@/lib/date";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function yen(n: number) {
   return `¥${n.toLocaleString("ja-JP")}`;
+}
+
+/** 直近7日の誕生日用・曜日ラベル */
+const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"];
+
+function birthdayLabel(birthday: string, daysUntil: number): string {
+  const [, bm, bd] = birthday.split("-").map(Number);
+  const thisYear = new Date().getFullYear();
+  const date = new Date(Date.UTC(thisYear + (daysUntil > 0 && (bm < new Date().getMonth() + 1) ? 1 : 0), bm - 1, bd));
+  const dow = WEEKDAY_JA[date.getUTCDay()];
+  return `${bm}/${bd}(${dow})`;
 }
 
 export default async function DashboardPage() {
@@ -16,13 +30,19 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData();
 
+  // KPI: 今日売上 / 今日人数 / 今月売上 / 今月チップ / 本日予約件数
+  // （②: 今日チップ → 昨日売上に変更）
   const kpis = [
     {
       label: "今日売上",
       value: yen(data.todayAmount),
       sub: `${data.todayVisitCount}組 / ${data.todayPeopleCount}名`,
     },
-    { label: "今日チップ", value: yen(data.todayTip), sub: "別集計" },
+    {
+      label: "昨日売上",
+      value: yen(data.yesterdayAmount),
+      sub: "前日実績",
+    },
     {
       label: "今月売上",
       value: yen(data.monthAmount),
@@ -30,22 +50,26 @@ export default async function DashboardPage() {
     },
     { label: "今月チップ", value: yen(data.monthTip), sub: "月合計" },
     {
-      label: "本日の予約件数",
+      label: "本日予約",
       value: `${data.todayReservationCount}件`,
       sub: "予約管理より",
     },
   ];
 
-  const hasNotice =
+  const hasBottleNotice =
     data.bottlesExpired > 0 ||
     data.bottlesWithin7 > 0 ||
     data.bottlesWithin14 > 0 ||
-    data.bottlesWithin30 > 0 ||
-    data.tomorrowBirthdays.length > 0 ||
-    data.todayBirthdays.length > 0;
+    data.bottlesWithin30 > 0;
+
+  const hasNotice =
+    hasBottleNotice ||
+    data.upcomingBirthdays.length > 0 ||
+    data.todayReservationCount > 0;
 
   return (
     <AppShell title="ホーム" staffName={profile.display_name} role={profile.role}>
+      {/* KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         {kpis.map((k) => (
           <Card key={k.label} className="text-center min-w-0 overflow-hidden">
@@ -56,113 +80,91 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {/* 通知 */}
-        <Card>
-          <CardTitle>通知</CardTitle>
-          {!hasNotice && (
-            <p className="text-navy/40 text-sm">現在、通知はありません。</p>
+      {/* MATTYからお知らせ（④⑤） */}
+      <Card className="mb-6">
+        <div className="flex items-center gap-3 mb-3">
+          <Image
+            src="/icons/matty-transparent-96.png"
+            alt="MATTY"
+            width={40}
+            height={40}
+            className="shrink-0 opacity-90"
+          />
+          <h2 className="text-base font-black text-navy">MATTYからお知らせ</h2>
+        </div>
+
+        {!hasNotice && (
+          <p className="text-navy/40 text-sm">今日はお知らせはありません。</p>
+        )}
+
+        <ul className="flex flex-col gap-3">
+          {/* 今日の予約 */}
+          {data.todayReservationCount > 0 && (
+            <li className="flex items-start gap-3 p-3 rounded-app bg-[#e8f0fb]">
+              <span className="text-2xl leading-none">📅</span>
+              <div>
+                <p className="font-black text-navy text-sm">本日の予約</p>
+                <p className="text-navy/60 text-sm">{data.todayReservationCount}件あります</p>
+              </div>
+            </li>
           )}
-          <ul className="space-y-2 text-sm">
-            {data.bottlesExpired > 0 && (
-              <li className="font-bold text-navy-dark">
-                ⚫期限切れボトル {data.bottlesExpired}本
-              </li>
-            )}
-            {data.bottlesWithin7 > 0 && (
-              <li className="font-bold text-danger">
-                🔴7日以内ボトル {data.bottlesWithin7}本
-              </li>
-            )}
-            {data.bottlesWithin14 > 0 && (
-              <li className="font-bold text-[#b58a05]">
-                🟡14日以内ボトル {data.bottlesWithin14}本
-              </li>
-            )}
-            {data.bottlesWithin30 > 0 && (
-              <li className="font-bold text-warn">
-                🟠30日以内ボトル {data.bottlesWithin30}本
-              </li>
-            )}
-            {data.todayBirthdays.length > 0 && (
-              <li className="font-bold text-[#7a4fa3]">
-                🎉本日誕生日 {data.todayBirthdays.length}名（
-                {data.todayBirthdays.map((c) => c.display_name).join("・")}
-                ）
-              </li>
-            )}
-            {data.tomorrowBirthdays.length > 0 && (
-              <li className="font-bold text-info">
-                明日誕生日 {data.tomorrowBirthdays.length}名（
-                {data.tomorrowBirthdays.map((c) => c.display_name).join("・")}
-                ）
-              </li>
-            )}
-          </ul>
-        </Card>
 
-        {/* 最近見た顧客 */}
-        <Card>
-          <CardTitle>最近見た顧客</CardTitle>
-          {data.recentlyViewed.length === 0 && (
-            <p className="text-navy/40 text-sm">まだ閲覧履歴がありません。</p>
+          {/* 誕生日（直近7日以内） */}
+          {data.upcomingBirthdays.map((c) => (
+            <li key={c.id} className="flex items-start gap-3 p-3 rounded-app bg-[#fce8f3]">
+              <span className="text-2xl leading-none">🎂</span>
+              <div>
+                <p className="font-black text-navy text-sm">
+                  {c.daysUntil === 0 ? "本日誕生日 🎉" : `${c.daysUntil}日後に誕生日`}
+                </p>
+                <p className="text-navy/70 text-sm font-bold">
+                  {birthdayLabel(c.birthday, c.daysUntil)}　{c.display_name}様
+                </p>
+              </div>
+            </li>
+          ))}
+
+          {/* ボトル期限 */}
+          {data.bottlesExpired > 0 && (
+            <li className="flex items-start gap-3 p-3 rounded-app bg-[#f5e8e8]">
+              <span className="text-2xl leading-none">🍷</span>
+              <div>
+                <p className="font-black text-danger text-sm">期限切れボトル</p>
+                <p className="text-navy/60 text-sm">{data.bottlesExpired}本</p>
+              </div>
+            </li>
           )}
-          <ul className="space-y-2 text-sm">
-            {data.recentlyViewed.slice(0, 6).map((c) => (
-              <li key={c.id}>
-                <a href={`/customers/${c.id}`} className="font-bold text-navy hover:underline">
-                  {c.display_name}
-                </a>
-                <span className="text-navy/40 ml-2">
-                  {c.last_visit_at
-                    ? `最終${daysSince(c.last_visit_at)}日前`
-                    : "来店履歴なし"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        {/* 最近よく来るお客様 */}
-        <Card>
-          <CardTitle>最近よく来るお客様</CardTitle>
-          {data.frequentVisitors.length === 0 && (
-            <p className="text-navy/40 text-sm">
-              直近3か月の来店データがまだありません。
-            </p>
+          {data.bottlesWithin7 > 0 && (
+            <li className="flex items-start gap-3 p-3 rounded-app bg-[#fde8e8]">
+              <span className="text-2xl leading-none">🍷</span>
+              <div>
+                <p className="font-black text-danger text-sm">7日以内に期限切れ</p>
+                <p className="text-navy/60 text-sm">{data.bottlesWithin7}本</p>
+              </div>
+            </li>
           )}
-          <ol className="space-y-2 text-sm list-decimal list-inside">
-            {data.frequentVisitors.map((c) => (
-              <li key={c.id}>
-                <a href={`/customers/${c.id}`} className="font-bold text-navy hover:underline">
-                  {c.display_name}
-                </a>
-                <span className="text-navy/40 ml-2">{c.visitCount}回来店</span>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      </div>
+          {data.bottlesWithin14 > 0 && (
+            <li className="flex items-start gap-3 p-3 rounded-app bg-[#fef3e2]">
+              <span className="text-2xl leading-none">🍷</span>
+              <div>
+                <p className="font-black text-[#b58a05] text-sm">14日以内に期限切れ</p>
+                <p className="text-navy/60 text-sm">{data.bottlesWithin14}本</p>
+              </div>
+            </li>
+          )}
+          {data.bottlesWithin30 > 0 && (
+            <li className="flex items-start gap-3 p-3 rounded-app bg-[#fef3e2]">
+              <span className="text-2xl leading-none">🍷</span>
+              <div>
+                <p className="font-bold text-warn text-sm">30日以内に期限切れ</p>
+                <p className="text-navy/60 text-sm">{data.bottlesWithin30}本</p>
+              </div>
+            </li>
+          )}
+        </ul>
+      </Card>
 
-      {data.vipNeedingFollowUp.length > 0 && (
-        <Card className="mb-6 border-l-4 border-warn">
-          <CardTitle>来店ペースを超えて来店していないVIP・お気に入り</CardTitle>
-          <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            {data.vipNeedingFollowUp.map((c) => (
-              <li key={c.id}>
-                <a href={`/customers/${c.id}`} className="font-bold text-navy hover:underline">
-                  {c.display_name}
-                </a>
-                <span className="text-navy/40 ml-2">
-                  {c.last_visit_at ? `${daysSince(c.last_visit_at)}日来店なし` : "来店履歴なし"}
-                  （通常ペース：{c.paceLabel}）
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
+      {/* クイックアクセス */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <LinkButton href="/visits/new" variant="navy">来店登録</LinkButton>
         <LinkButton href="/search" variant="gold">顧客検索</LinkButton>

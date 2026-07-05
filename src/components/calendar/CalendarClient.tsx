@@ -115,6 +115,18 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
             day.birthdays.length > 0 ||
             day.bottleExpiries.length > 0;
 
+          const dayOfWeek = new Date(dateStr).getUTCDay(); // 0=日, 6=土
+          const isSunday = dayOfWeek === 0;
+          const isSaturday = dayOfWeek === 6;
+
+          const dayNumColor = isToday
+            ? "text-navy bg-navy/10 rounded-full px-1.5"
+            : isSunday
+            ? "text-danger font-black"
+            : isSaturday
+            ? "text-info font-black"
+            : "text-navy/60";
+
           return (
             <button
               key={dateStr}
@@ -128,11 +140,7 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                   : "border-navy/5 bg-white hover:border-navy/20"
               }`}
             >
-              <span
-                className={`text-xs font-bold ${
-                  isToday ? "text-navy bg-navy/10 rounded-full px-1.5" : "text-navy/60"
-                }`}
-              >
+              <span className={`text-xs ${dayNumColor}`}>
                 {dayNum}
               </span>
               <div className="mt-1 flex flex-col gap-0.5">
@@ -153,7 +161,7 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 )}
                 {day.bottleExpiries.length > 0 && (
                   <span className="text-[10px] font-bold text-warn truncate">
-                    🍾{day.bottleExpiries.length}
+                    🍷{day.bottleExpiries.length}
                   </span>
                 )}
                 {!hasContent && <span className="text-[10px] text-navy/20">-</span>}
@@ -234,7 +242,7 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
             <ul className="flex flex-col gap-1">
               {selectedDay.bottleExpiries.map((b) => (
                 <li key={b.id} className="text-sm">
-                  🍾 {b.customerName}（{b.bottleLabel}）
+                  🍷 {b.customerName}（{b.bottleLabel}）
                 </li>
               ))}
             </ul>

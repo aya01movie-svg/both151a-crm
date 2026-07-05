@@ -4,7 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { BottleStatusFilter } from "@/lib/data/bottles";
 
 const OPTIONS: { value: BottleStatusFilter; label: string; emoji: string }[] = [
-  { value: "kept", label: "預かり中", emoji: "🍾" },
+  { value: "kept", label: "預かり中", emoji: "🍷" },
   { value: "expiring30", label: "期限30日以内", emoji: "🟠" },
   { value: "expired", label: "期限切れ", emoji: "⚫" },
   { value: "finished", label: "飲み切り", emoji: "" },

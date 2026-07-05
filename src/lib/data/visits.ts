@@ -126,6 +126,7 @@ export type NewVisitInput = {
   isNewCustomer: boolean;
   newCustomerName?: string;
   newCustomerKana?: string;
+  newCustomerBirthday?: string;
   visitedAt: string; // ISO文字列
   peopleCount: number;
   companionNames: string[]; // 最大10名（第4章）
@@ -171,6 +172,7 @@ export async function createVisit(input: NewVisitInput) {
     p_tag_ids: input.tagIds,
     p_reservation_id: input.reservationId ?? null,
     p_new_customer_kana: input.newCustomerKana ?? null,
+    p_new_customer_birthday: input.newCustomerBirthday || null,
     p_companion_kanas: input.companionKanas,
   });
 

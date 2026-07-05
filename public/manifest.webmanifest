@@ -1,22 +1,22 @@
 {
-  "name": "きゃってぃー",
-  "short_name": "きゃってぃー",
-  "description": "きゃってぃー",
+  "name": "MATTY",
+  "short_name": "MATTY",
+  "description": "MATTY",
   "start_url": "/dashboard",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "background_color": "#f6f1e7",
-  "theme_color": "#16213e",
+  "background_color": "#FEEC03",
+  "theme_color": "#FEEC03",
   "lang": "ja",
   "icons": [
-    { "src": "/icons/cat-icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/cat-icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/cat-icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/cat-icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/cat-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/cat-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/cat-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/cat-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/matty-icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/matty-icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/matty-icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/matty-icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/matty-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/matty-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/matty-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/matty-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

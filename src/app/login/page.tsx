@@ -44,15 +44,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-beige">
-      <header className="bg-navy text-white h-16 flex items-center gap-3 px-4 md:px-6">
+      <header className="bg-gold text-navy-dark h-16 flex items-center gap-3 px-4 md:px-6">
         <Image
-          src="/icons/cat-icon-96.png"
+          src="/icons/matty-icon-96.png"
           alt=""
           width={32}
           height={32}
           className="rounded-full"
         />
-        <span className="font-black text-lg tracking-tight">きゃってぃー</span>
+        <span className="font-black text-lg tracking-tight">MATTY</span>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4">

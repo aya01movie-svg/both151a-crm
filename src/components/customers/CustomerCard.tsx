@@ -59,7 +59,7 @@ export function CustomerCard({
           </span>
           {customer.current_bottle_count > 0 && (
             <span className="text-warn font-bold">
-              🍾{customer.current_bottle_count}本
+              🍷{customer.current_bottle_count}本
             </span>
           )}
           {pace.label !== "-" && (

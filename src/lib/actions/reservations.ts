@@ -61,6 +61,8 @@ export async function saveReservationAction(
     await createReservation(input);
 
     revalidatePath("/reservations");
+    revalidatePath("/calendar");
+    revalidatePath("/dashboard");
     return { error: null, success: true };
   } catch (e) {
     return {
@@ -74,6 +76,7 @@ export async function cancelReservationAction(reservationId: string) {
   try {
     await updateReservationStatus(reservationId, "cancelled");
     revalidatePath("/reservations");
+    revalidatePath("/calendar");
   } catch {
     // キャンセル操作の失敗はUI側で目立たせる必要が薄いため静かに無視する
     // （再度キャンセルボタンを押せば再試行できる）
