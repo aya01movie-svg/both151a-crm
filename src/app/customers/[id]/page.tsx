@@ -8,7 +8,6 @@ import { LinkButton } from "@/components/ui/Button";
 import { RankBadge } from "@/components/customers/RankBadge";
 import { RankSelector } from "@/components/customers/RankSelector";
 import { FavoriteToggle } from "@/components/customers/FavoriteToggle";
-import { BottleStatusBadge } from "@/components/customers/BottleStatusBadge";
 import { BottleAddForm } from "@/components/customers/BottleAddForm";
 import { ChampagneAddForm } from "@/components/customers/ChampagneAddForm";
 import { NoteForm } from "@/components/customers/NoteForm";
@@ -222,17 +221,16 @@ export default async function CustomerDetailPage({
                         <span className="text-navy/40 font-normal text-xs ml-1">×{b.quantity}</span>
                       )}
                     </p>
-                    <p className="text-xs text-navy/40">
-                      期限 {b.status === "kept" ? formatDate(b.expiry_date) : "対象外"}
-                    </p>
                     {b.memo && <p className="text-xs text-navy/30">{b.memo}</p>}
                   </div>
-                  <BottleStatusBadge bottle={b} />
+                  <span className="text-xs font-bold text-navy/40 shrink-0">
+                    {b.status === "kept" ? "🍷 預かり中" : b.status === "finished" ? "飲み切り" : "返却済"}
+                  </span>
                 </li>
               ))}
             </ul>
             <p className="text-xs text-navy/30 mt-1">
-              期限変更・状態変更は<a href="/bottles" className="underline">ボトル管理</a>から行えます。
+              状態変更は<a href="/bottles" className="underline">ボトル管理</a>から行えます。
             </p>
             <BottleAddForm customerId={customer.id} autoOpen={visitSaved === "1"} />
 
@@ -261,9 +259,6 @@ export default async function CustomerDetailPage({
                           <a href={`/customers/${b.customer_id}`} className="hover:underline">
                             {b.ownerName}様のボトル
                           </a>
-                        </p>
-                        <p className="text-xs text-navy/40">
-                          期限 {b.status === "kept" ? formatDate(b.expiry_date) : b.status === "finished" ? "飲み切り済" : "対象外"}
                         </p>
                       </div>
                     </li>

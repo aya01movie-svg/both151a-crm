@@ -19,7 +19,12 @@ function isPublicPath(pathname: string) {
 /**
  * 全リクエストでSupabaseセッションを検証・リフレッシュし、
  * 未ログインユーザーをログイン画面へリダイレクトする。
- * （第41章「未ログイン状態では一切の画面を表示しない」を満たすための共通ガード）
+ *
+ * v1.2修正:
+ * ・タブレットでのページ遷移後にログイン画面へ戻る問題を修正
+ * ・タイムアウトを10秒に延長し、一時的な接続断での誤リダイレクトを防止
+ * ・セッションCookieが存在する場合はタイムアウトでもリダイレクトしない
+ * ・getSession()でCookieからセッション読み取り、getUser()でサーバー検証の2段階に変更
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -43,27 +48,42 @@ export async function updateSession(request: NextRequest) {
         },
       },
       global: {
-        // Supabase未設定（ダミー値）や通信断で無限に待機しないよう、
-        // 認証確認は5秒でタイムアウトさせる。
         fetch: (input, init) =>
-          fetch(input, { ...init, cache: "no-store", signal: AbortSignal.timeout(5000) }),
+          fetch(input, { ...init, cache: "no-store", signal: AbortSignal.timeout(10000) }),
       },
     }
   );
 
   const { pathname } = request.nextUrl;
 
+  // Cookieにセッションがあるかどうかをまず確認（ネットワーク不要）
+  const { data: sessionData } = await supabase.auth.getSession();
+  const hasSessionCookie = !!sessionData?.session;
+
   let user = null;
+  let authError = false;
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
   } catch {
-    // Supabase未接続・タイムアウト時は未ログイン扱いとし、
-    // ログイン画面へ誘導する（ハングさせない）。
+    // タイムアウト・ネットワークエラー時
+    authError = true;
+    // Cookieにセッションが存在する場合はリダイレクトしない
+    // → タブレットでのページ遷移後にログイン画面に飛ぶ問題の主因
+    if (hasSessionCookie) {
+      return supabaseResponse;
+    }
     user = null;
   }
 
-  if (!user && !isPublicPath(pathname)) {
+  // ネットワークエラーでCookieもない場合のみリダイレクト
+  if (!user && !authError && !isPublicPath(pathname)) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirectedFrom", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (!user && authError && !hasSessionCookie && !isPublicPath(pathname)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectedFrom", pathname);
     return NextResponse.redirect(loginUrl);

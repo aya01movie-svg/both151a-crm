@@ -8,7 +8,7 @@ import type { BottleStatus } from "@/types/database";
 export type BottleFormState = { error: string | null };
 const ok: BottleFormState = { error: null };
 
-/** ボトル新規預かり登録（顧客詳細の「ボトル追加」から呼び出す・第11章）。 */
+/** ボトル新規預かり登録（顧客詳細の「ボトル追加」から呼び出す）。 */
 export async function addBottleAction(
   _prev: BottleFormState,
   formData: FormData
@@ -17,23 +17,20 @@ export async function addBottleAction(
   const bottleType = String(formData.get("bottle_type") ?? "").trim();
   const bottleName = String(formData.get("bottle_name") ?? "").trim();
   const quantity = Number(formData.get("quantity") ?? 1) || 1;
-  const expiryDate = String(formData.get("expiry_date") ?? "").trim();
   const memo = String(formData.get("memo") ?? "").trim();
 
   if (!customerId) return { error: "顧客情報が不正です。" };
   if (!bottleType && !bottleName) return { error: "ボトルの種類またはボトルネームを入力してください。" };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { error } = await supabase.from("bottles").insert({
     customer_id: customerId,
     bottle_type: bottleType || null,
     bottle_name: bottleName || bottleType,
     quantity,
-    expiry_date: expiryDate || undefined,
+    // expiry_date はDBのDEFAULT値（登録日+1年）を使用するため省略
     memo: memo || null,
     created_by: user?.id ?? null,
   });

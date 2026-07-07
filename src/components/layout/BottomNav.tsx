@@ -1,26 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "./nav-items";
 import type { StaffRole } from "@/types/database";
 
-/**
- * スマートフォン用の下部固定メニュー（第33章「スマホでは下部固定メニュー」）。
- * md未満の画面幅でのみ表示する。
- */
 export function BottomNav({ role }: { role: StaffRole }) {
   const pathname = usePathname();
-  const items = NAV_ITEMS.filter(
-    (item) => !item.adminOnly || role === "admin"
-  );
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || role === "admin");
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-white border-t border-navy/10 flex pb-[env(safe-area-inset-bottom)]">
       {items.map((item) => {
-        const active =
-          pathname === item.href || pathname.startsWith(item.href + "/");
-        const Icon = item.icon;
+        const active = pathname === item.href || pathname.startsWith(item.href + "/");
+        const Icon   = item.icon;
         return (
           <Link
             key={item.href}
@@ -30,7 +24,18 @@ export function BottomNav({ role }: { role: StaffRole }) {
               active ? "text-navy" : "text-navy/40"
             }`}
           >
-            <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+            {/* MATTYアイコン（画像）またはLucideアイコン */}
+            {item.imageSrc ? (
+              <Image
+                src={item.imageSrc}
+                alt={item.label}
+                width={22}
+                height={22}
+                className={active ? "opacity-100" : "opacity-40"}
+              />
+            ) : Icon ? (
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+            ) : null}
             <span className="truncate max-w-full">{item.shortLabel ?? item.label}</span>
           </Link>
         );

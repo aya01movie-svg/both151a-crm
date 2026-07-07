@@ -135,18 +135,18 @@ export function buildNoticeItems(params: {
     return Math.round((d.getTime() - today.getTime()) / 86400000);
   }
 
-  // 店休日（14日先まで）
+  // 店休日（当日〜30日先まで）
   for (const cd of closedDays) {
     const diff = dayDiff(cd.date);
-    if (diff < 0 || diff > 14) continue;
+    if (diff < 0 || diff > 30) continue;
     const subtitle = diff === 0 ? "本日休業" : diff === 1 ? "明日休業" : `${dateLabel(cd.date)} 休業`;
     items.push({ key: `closed-${cd.date}`, emoji: "🚫", title: cd.note || "店休日", subtitle, colorClass: "bg-[#fde8e8]" });
   }
 
-  // 祝日（14日先まで）
+  // 祝日（当日〜30日先まで）
   for (const h of holidays) {
     const diff = dayDiff(h.date);
-    if (diff < 0 || diff > 14) continue;
+    if (diff < 0 || diff > 30) continue;
     const subtitle = diff === 0 ? "本日" : diff === 1 ? "明日" : dateLabel(h.date);
     items.push({ key: `holiday-${h.date}`, emoji: "🔴", title: h.name, subtitle, colorClass: "bg-[#fde8e8]" });
   }
@@ -154,8 +154,7 @@ export function buildNoticeItems(params: {
   // イベント
   for (const ev of events) {
     if (ev.schedule_type === "weekly" && ev.weekly_day !== null) {
-      // 今日〜14日先の中で最初の発生日を1件表示
-      for (let i = 0; i <= 14; i++) {
+      for (let i = 0; i <= 30; i++) {
         const d = new Date(today.getTime() + i * 86400000);
         if (d.getDay() === ev.weekly_day) {
           const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -177,15 +176,15 @@ export function buildNoticeItems(params: {
       }
     } else if (ev.schedule_type === "single" && ev.start_date) {
       const diff = dayDiff(ev.start_date);
-      if (diff >= -1 && diff <= 14) {
-        const subtitle = diff < 0 ? "昨日" : diff === 0 ? "本日" : `あと${diff}日 (${dateLabel(ev.start_date)})`;
+      if (diff >= 0 && diff <= 30) {
+        const subtitle = diff === 0 ? "本日" : `あと${diff}日 (${dateLabel(ev.start_date)})`;
         items.push({ key: `ev-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle, colorClass: "bg-[#fef3e2]", url: ev.url });
       }
     } else if (ev.schedule_type === "range" && ev.start_date && ev.end_date) {
       const diffStart = dayDiff(ev.start_date);
-      const diffEnd = dayDiff(ev.end_date);
-      if (diffEnd < 0) continue; // 終了済み
-      if (diffStart <= 14) {
+      const diffEnd   = dayDiff(ev.end_date);
+      if (diffEnd < 0) continue;
+      if (diffStart <= 30) {
         const subtitle =
           diffStart > 0 ? `あと${diffStart}日から (〜${dateLabel(ev.end_date)})`
           : diffEnd === 0 ? "本日最終日"
@@ -195,6 +194,5 @@ export function buildNoticeItems(params: {
     }
   }
 
-  // 日付が近い順にソート
-  return items.slice(0, 12); // 最大12件
+  return items.slice(0, 20);
 }

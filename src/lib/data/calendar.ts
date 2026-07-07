@@ -9,6 +9,7 @@ export type CalendarVisitEntry = {
   amount: number;
   tip: number;
   time: string;
+  hasChampagne: boolean; // 🍾表示フラグ
 };
 
 export type CalendarReservationEntry = {
@@ -36,7 +37,6 @@ export type CalendarDayData = {
   visits: CalendarVisitEntry[];
   reservations: CalendarReservationEntry[];
   birthdays: CalendarBirthdayEntry[];
-  bottleExpiries: CalendarBottleEntry[];
   events: { id: string; title: string; emoji: string; event_type: string; url?: string | null }[];
   isHoliday: boolean;
   holidayName: string | null;
@@ -64,7 +64,6 @@ function emptyDay(date: string): CalendarDayData {
     visits: [],
     reservations: [],
     birthdays: [],
-    bottleExpiries: [],
     events: [],
     isHoliday: false,
     holidayName: null,
@@ -93,7 +92,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     days[dateStr] = emptyDay(dateStr);
   }
 
-  const [visitsRes, reservationsRes, customersRes, bottlesRes] = await Promise.all([
+  const [visitsRes, reservationsRes, customersRes] = await Promise.all([
     supabase
       .from("visits")
       .select("id, visited_at, amount, tip, primary_customer_id")
@@ -111,15 +110,22 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
       .select("id, display_name, birthday")
       .eq("hidden", false)
       .not("birthday", "is", null),
-    supabase
-      .from("bottles")
-      .select("id, bottle_type, bottle_name, expiry_date, customer_id")
-      .eq("status", "kept")
-      .gte("expiry_date", monthStart)
-      .lte("expiry_date", monthEnd),
   ]);
 
   const visitIds = ((visitsRes.data ?? []) as { id: string }[]).map((v) => v.id);
+
+  // シャンパンが注文された visit_id を取得
+  const champagneVisitIds = new Set<string>();
+  if (visitIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: champRows } = await (supabase as any)
+      .from("champagnes")
+      .select("visit_id")
+      .in("visit_id", visitIds);
+    for (const row of (champRows ?? []) as { visit_id: string | null }[]) {
+      if (row.visit_id) champagneVisitIds.add(row.visit_id);
+    }
+  }
   const reservationIds = ((reservationsRes.data ?? []) as { id: string }[]).map((r) => r.id);
 
   // 同伴者・予約同伴者名を2段クエリで取得（ネストembedは不安定なため）
@@ -207,6 +213,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
       amount: v.amount,
       tip: v.tip,
       time: toJstTimeString(v.visited_at),
+      hasChampagne: champagneVisitIds.has(v.id),
     });
     day.totalAmount += v.amount;
     day.totalTip += v.tip;
@@ -236,30 +243,6 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     const day = days[dateStr];
     if (!day) continue;
     day.birthdays.push({ id: c.id, customerName: c.display_name });
-  }
-
-  // ボトル期限の顧客名を2段クエリで取得
-  const bottleRows = (bottlesRes.data ?? []) as { id: string; bottle_type: string | null; bottle_name: string; expiry_date: string; customer_id: string }[];
-  const bottleCustomerIds = [...new Set(bottleRows.map((b) => b.customer_id))];
-  const bottleCustomerNameById = new Map<string, string>();
-  if (bottleCustomerIds.length > 0) {
-    const { data: bcData } = await supabase
-      .from("customers")
-      .select("id, display_name")
-      .in("id", bottleCustomerIds);
-    for (const c of (bcData ?? []) as { id: string; display_name: string }[]) {
-      bottleCustomerNameById.set(c.id, c.display_name);
-    }
-  }
-
-  for (const b of bottleRows) {
-    const day = days[b.expiry_date];
-    if (!day) continue;
-    day.bottleExpiries.push({
-      id: b.id,
-      customerName: bottleCustomerNameById.get(b.customer_id) ?? "",
-      bottleLabel: b.bottle_type || b.bottle_name,
-    });
   }
 
   // イベント・祝日・店休日を並行取得してカレンダーマスに反映する

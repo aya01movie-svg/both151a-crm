@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { computePace } from "@/lib/pace";
-import { getExpiryTier } from "@/lib/bottle-expiry";
 import { jstDateRangeToUtcIso, toJstDateString, toJstTimeString } from "@/lib/date";
 
 export type DashboardData = {
@@ -15,10 +14,6 @@ export type DashboardData = {
   monthPeopleCount: number;
   todayReservationCount: number;
   todayReservations: { id: string; customerName: string; peopleCount: number; time: string }[];
-  bottlesExpired: number;
-  bottlesWithin7: number;
-  bottlesWithin14: number;
-  bottlesWithin30: number;
   upcomingBirthdays: {
     id: string;
     display_name: string;
@@ -69,7 +64,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     todayVisitsRes,
     yesterdayVisitsRes,
     monthVisitsRes,
-    bottlesRes,
     customersForBirthdayRes,
     todayReservationsRes,
     paceCandidatesRes,
@@ -92,7 +86,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       .eq("invalidated", false)
       .gte("visited_at", monthStartIso)
       .lt("visited_at", nextMonthStartIso),
-    supabase.from("bottles").select("expiry_date, status").eq("status", "kept"),
     supabase
       .from("customers")
       .select("id, display_name, birthday")
@@ -133,12 +126,6 @@ export async function getDashboardData(): Promise<DashboardData> {
   const monthTip = monthVisits.reduce((sum, v) => sum + v.tip, 0);
   const monthPeopleCount = monthVisits.reduce((sum, v) => sum + v.people_count, 0);
 
-  const bottles = bottlesRes.data ?? [];
-  const bottleTiers = bottles.map((b: { expiry_date: string }) => getExpiryTier(b.expiry_date));
-  const bottlesExpired  = bottleTiers.filter((t: string) => t === "expired").length;
-  const bottlesWithin7  = bottleTiers.filter((t: string) => t === "within7").length;
-  const bottlesWithin14 = bottleTiers.filter((t: string) => t === "within14").length;
-  const bottlesWithin30 = bottleTiers.filter((t: string) => t === "within30").length;
 
   // 今日の予約顧客名を2段クエリで取得（ネストembed排除）
   const todayResRows = (todayReservationsRes.data ?? []) as {
@@ -214,10 +201,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     monthPeopleCount,
     todayReservationCount: todayReservations.length,
     todayReservations,
-    bottlesExpired,
-    bottlesWithin7,
-    bottlesWithin14,
-    bottlesWithin30,
     upcomingBirthdays,
     vipNeedingFollowUp,
   };

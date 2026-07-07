@@ -7,13 +7,6 @@ import { BOTTLE_TYPE_CANDIDATES } from "@/lib/bottle-types";
 
 const initialState: BottleFormState = { error: null };
 
-function defaultExpiry(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 365);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 export function BottleAddForm({
   customerId,
   autoOpen = false,
@@ -51,6 +44,7 @@ export function BottleAddForm({
     <form ref={formRef} action={formAction} className="flex flex-col gap-2 mt-3 border-t border-navy/10 pt-3">
       <input type="hidden" name="customer_id" value={customerId} />
       <input type="hidden" name="bottle_type" value={bottleType} />
+      {/* 期限はDBデフォルト値（登録日+1年）を使用 */}
 
       <span className="block text-xs font-bold text-navy/50">ボトルの種類</span>
       <div className="flex flex-wrap gap-1.5">
@@ -74,36 +68,22 @@ export function BottleAddForm({
         placeholder="候補にない場合は手入力"
         className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
       />
-
       <input
         type="text"
         name="bottle_name"
         placeholder="ボトルネーム（キープ札に書く名前・任意）"
         className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
       />
-
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block">
-          <span className="block text-xs font-bold text-navy/50 mb-1">本数</span>
-          <input
-            type="number"
-            name="quantity"
-            min={1}
-            defaultValue={1}
-            className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-xs font-bold text-navy/50 mb-1">期限日</span>
-          <input
-            type="date"
-            name="expiry_date"
-            defaultValue={defaultExpiry()}
-            className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
-          />
-        </label>
-      </div>
-
+      <label className="block">
+        <span className="block text-xs font-bold text-navy/50 mb-1">本数</span>
+        <input
+          type="number"
+          name="quantity"
+          min={1}
+          defaultValue={1}
+          className="w-full min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm text-navy focus:outline-none focus:border-gold"
+        />
+      </label>
       <input
         type="text"
         name="memo"

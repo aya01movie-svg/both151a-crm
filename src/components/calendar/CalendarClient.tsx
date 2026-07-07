@@ -47,200 +47,190 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
 
   return (
     <div>
+      {/* ナビゲーション */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Link
             href={calendarLink(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1)}
-            className="btn-base px-3 min-h-10 bg-white border-2 border-navy/10 text-navy"
+            className="btn-base px-3 min-h-11 bg-white border-2 border-navy/10 text-navy"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={20} />
           </Link>
-          <h2 className="text-lg font-black text-navy w-32 text-center">
+          <h2 className="text-xl font-black text-navy w-36 text-center">
             {year}年{month}月
           </h2>
           <Link
             href={calendarLink(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1)}
-            className="btn-base px-3 min-h-10 bg-white border-2 border-navy/10 text-navy"
+            className="btn-base px-3 min-h-11 bg-white border-2 border-navy/10 text-navy"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </Link>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <Link
             href={calendarLink(lastYearDate.getFullYear(), lastYearDate.getMonth() + 1)}
-            className="btn-base px-3 min-h-10 bg-white border-2 border-navy/10 text-navy text-sm inline-flex items-center gap-1"
+            className="btn-base px-3 min-h-11 bg-white border-2 border-navy/10 text-navy text-sm font-bold gap-1.5"
           >
-            <History size={16} /> 去年
+            <History size={16} />去年
           </Link>
           <Link
             href={calendarLink(today.getFullYear(), today.getMonth() + 1)}
-            className="btn-base px-3 min-h-10 bg-gold text-navy-dark text-sm"
+            className="btn-base px-4 min-h-11 bg-gold text-navy font-bold text-sm"
           >
             今日へ
           </Link>
         </div>
       </div>
 
-      <Card className="mb-4">
-        <p className="text-sm text-navy/50">
-          今月合計売上 <span className="font-black text-navy">{yen(data.monthTotalAmount)}</span>
-          <span className="mx-2">/</span>
-          今月合計チップ <span className="font-black text-navy">{yen(data.monthTotalTip)}</span>
-        </p>
-      </Card>
-
-      <div className="grid grid-cols-7 gap-1 mb-1">
-        {WEEKDAYS.map((w, i) => (
-          <div
-            key={w}
-            className={`text-center text-xs font-bold py-1 ${
-              i === 0 ? "text-danger" : i === 6 ? "text-info" : "text-navy/50"
-            }`}
-          >
-            {w}
-          </div>
-        ))}
+      {/* 今月合計 */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <Card className="text-center py-3">
+          <p className="text-xs text-navy/50 font-bold mb-1">今月合計売上</p>
+          <p className="text-2xl font-black text-navy">{yen(data.monthTotalAmount)}</p>
+        </Card>
+        <Card className="text-center py-3">
+          <p className="text-xs text-navy/50 font-bold mb-1">今月合計チップ</p>
+          <p className="text-2xl font-black text-navy">{yen(data.monthTotalTip)}</p>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((dateStr, i) => {
-          if (!dateStr) return <div key={`empty-${i}`} />;
-          const day = days[dateStr];
-          const dayNum = Number(dateStr.slice(8, 10));
-          const isToday = dateStr === todayStr;
-          const isSelected = dateStr === selectedDate;
-          const hasContent =
-            day.visits.length > 0 ||
-            day.reservations.length > 0 ||
-            day.birthdays.length > 0 ||
-            day.bottleExpiries.length > 0 ||
-            day.events.length > 0 ||
-            day.isHoliday ||
-            day.isClosedDay;
-
-          const [dy, dm, dd] = dateStr.split("-").map(Number);
-          const dayOfWeek = new Date(dy, dm - 1, dd).getDay();
-          const isSunday = dayOfWeek === 0;
-          const isSaturday = dayOfWeek === 6;
-
-          // 曜日色・祝日色は「今日」「選択中」よりも優先して表示する
-          // （当日が日曜でも赤、当日が土曜でも青にする）
-          const textColorClass =
-            isSunday || day.isHoliday
-              ? "text-danger font-black"
-              : isSaturday
-              ? "text-info font-black"
-              : isToday
-              ? "text-navy"
-              : "text-navy/60";
-
-          const dayNumColor = isToday
-            ? `${textColorClass} bg-navy/10 rounded-full px-1.5`
-            : textColorClass;
-
-          return (
-            <button
-              key={dateStr}
-              type="button"
-              onClick={() => setSelectedDate(dateStr)}
-              className={`text-left rounded-app border-2 p-1.5 min-h-[70px] transition-colors ${
-                isSelected
-                  ? "border-gold bg-gold/10"
-                  : isToday
-                  ? "border-navy bg-white"
-                  : day.isClosedDay
-                  ? "border-danger/20 bg-[#fff0f0] hover:border-danger/30"
-                  : "border-navy/5 bg-white hover:border-navy/20"
+      {/* カレンダーグリッド */}
+      <Card className="mb-4 p-3">
+        {/* 曜日ヘッダー */}
+        <div className="grid grid-cols-7 mb-1">
+          {WEEKDAYS.map((w, i) => (
+            <div
+              key={w}
+              className={`text-center text-xs font-bold py-1 ${
+                i === 0 ? "text-danger" : i === 6 ? "text-info" : "text-navy/40"
               }`}
             >
-              <span className={`text-xs ${dayNumColor}`}>
-                {dayNum}
-              </span>
-              <div className="mt-1 flex flex-col gap-0.5">
-                {day.isClosedDay && (
-                  <span className="text-[10px] font-bold text-danger truncate">🚫休</span>
-                )}
-                {day.isHoliday && !day.isClosedDay && (
-                  <span className="text-[10px] font-bold text-danger/70 truncate">🔴祝</span>
-                )}
-                {day.events.slice(0, 2).map((ev) => (
-                  <span key={ev.id} className="text-[10px] font-bold text-navy/60 truncate">
-                    {ev.emoji}
-                  </span>
-                ))}
-                {day.visits.length > 0 && (
-                  <span className="text-[10px] font-bold text-success truncate">
-                    来{day.visits.length}件
-                  </span>
-                )}
-                {day.reservations.length > 0 && (
-                  <span className="text-[10px] font-bold text-info truncate">
-                    予{day.reservations.length}件
-                  </span>
-                )}
-                {day.birthdays.length > 0 && (
-                  <span className="text-[10px] font-bold text-[#7a4fa3] truncate">
-                    🎂{day.birthdays.length}
-                  </span>
-                )}
-                {day.bottleExpiries.length > 0 && (
-                  <span className="text-[10px] font-bold text-warn truncate">
-                    🍷{day.bottleExpiries.length}
-                  </span>
-                )}
-                {!hasContent && <span className="text-[10px] text-navy/20">-</span>}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+              {w}
+            </div>
+          ))}
+        </div>
 
+        {/* 日付グリッド */}
+        <div className="grid grid-cols-7 gap-0.5">
+          {cells.map((dateStr, idx) => {
+            if (!dateStr) return <div key={`empty-${idx}`} />;
+            const [dy, dm, dd] = dateStr.split("-").map(Number);
+            const dayOfWeek = new Date(dy, dm - 1, dd).getDay();
+            const isSunday   = dayOfWeek === 0;
+            const isSaturday = dayOfWeek === 6;
+            const isToday    = dateStr === todayStr;
+            const isSelected = dateStr === selectedDate;
+            const day        = days[dateStr];
+            const dayNum     = dd;
+
+            const textColor =
+              isSunday || (day?.isHoliday)
+                ? "text-danger font-black"
+                : isSaturday
+                ? "text-info font-black"
+                : "text-navy/70";
+
+            const bgClass = isSelected
+              ? "border-gold bg-gold/20"
+              : isToday
+              ? "border-navy bg-white"
+              : day?.isClosedDay
+              ? "border-danger/20 bg-[#fff0f0]"
+              : "border-navy/5 bg-white hover:border-navy/20";
+
+            const hasContent =
+              (day?.visits.length ?? 0) > 0 ||
+              (day?.reservations.length ?? 0) > 0 ||
+              (day?.birthdays.length ?? 0) > 0 ||
+              (day?.events.length ?? 0) > 0 ||
+              day?.isHoliday ||
+              day?.isClosedDay;
+
+            return (
+              <button
+                key={dateStr}
+                type="button"
+                onClick={() => setSelectedDate(dateStr === selectedDate ? null : dateStr)}
+                className={`text-left rounded-app border-2 p-1.5 min-h-[68px] transition-colors ${bgClass}`}
+              >
+                <span className={`text-sm ${textColor}${isToday ? " bg-navy/10 rounded-full px-1" : ""}`}>
+                  {dayNum}
+                </span>
+                <div className="mt-0.5 flex flex-col gap-0.5">
+                  {day?.isClosedDay && (
+                    <span className="text-[10px] font-bold text-danger">🚫休</span>
+                  )}
+                  {day?.isHoliday && !day.isClosedDay && (
+                    <span className="text-[10px] font-bold text-danger/70">🔴祝</span>
+                  )}
+                  {day?.events.slice(0, 2).map((ev) => (
+                    <span key={ev.id} className="text-[10px] leading-none">{ev.emoji}</span>
+                  ))}
+                  {(day?.visits.length ?? 0) > 0 && (
+                    <span className="text-[10px] font-bold text-success">
+                      来{day.visits.length}
+                    </span>
+                  )}
+                  {(day?.reservations.length ?? 0) > 0 && (
+                    <span className="text-[10px] font-bold text-info">
+                      予{day.reservations.length}
+                    </span>
+                  )}
+                  {(day?.birthdays.length ?? 0) > 0 && (
+                    <span className="text-[10px] font-bold text-[#7a4fa3]">🎂</span>
+                  )}
+                  {!hasContent && <span className="text-[10px] text-navy/20">–</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* 選択日の詳細 */}
       {selectedDay && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
           <Card>
-            <CardTitle>{selectedDate} の来店</CardTitle>
+            <CardTitle className="text-lg">
+              {selectedDate?.replace(/-/g, "/")} の詳細
+            </CardTitle>
+
+            {/* 来店一覧 */}
+            <p className="text-xs font-bold text-navy/50 mb-2">来店</p>
             {selectedDay.visits.length === 0 && (
-              <p className="text-navy/40 text-sm">来店はありません。</p>
+              <p className="text-navy/40 text-base mb-3">来店はありません。</p>
             )}
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-2 mb-4">
               {selectedDay.visits.map((v) => (
-                <li key={v.id} className="text-sm border-b border-navy/5 pb-1">
-                  <div className="flex justify-between">
-                    <span className="font-bold text-navy">
-                      {v.time} {v.customerName}
-                    </span>
-                    <span className="text-navy/50">
-                      {yen(v.amount)}（Tip {yen(v.tip)}）
-                    </span>
+                <li key={v.id} className="rounded-app bg-navy/3 border border-navy/5 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-black text-navy text-base">
+                      {v.hasChampagne && <span className="mr-1">🍾</span>}
+                      {v.customerName}
+                    </p>
+                    <p className="text-sm font-bold text-navy/60">{yen(v.amount)}</p>
                   </div>
+                  <p className="text-xs text-navy/40 mt-0.5">{v.time}</p>
                   {v.companionNames.length > 0 && (
-                    <p className="text-xs text-navy/40">同伴：{v.companionNames.join("、")}</p>
+                    <p className="text-xs text-navy/40 mt-0.5">同伴：{v.companionNames.join("、")}</p>
                   )}
                 </li>
               ))}
             </ul>
-            {selectedDay.visits.length > 0 && (
-              <p className="text-xs text-navy/40 mt-2">
-                合計 {yen(selectedDay.totalAmount)}・チップ {yen(selectedDay.totalTip)}
-              </p>
-            )}
-          </Card>
 
-          <Card>
-            <CardTitle>{selectedDate} の予約・誕生日・ボトル期限</CardTitle>
-            <p className="text-xs font-bold text-navy/50 mb-1">予約</p>
+            {/* 予約一覧 */}
+            <p className="text-xs font-bold text-navy/50 mb-2">予約</p>
             {selectedDay.reservations.length === 0 && (
-              <p className="text-navy/40 text-sm mb-2">予約はありません。</p>
+              <p className="text-navy/40 text-base mb-3">予約はありません。</p>
             )}
-            <ul className="flex flex-col gap-1 mb-3">
+            <ul className="flex flex-col gap-2 mb-4">
               {selectedDay.reservations.map((r) => (
-                <li key={r.id} className="text-sm mb-1">
-                  <div>
-                    {r.time} {r.customerName}
-                    <span className="text-navy/40 ml-2 text-xs">
-                      ({STATUS_LABEL[r.status] ?? r.status})
-                    </span>
+                <li key={r.id} className="rounded-app bg-info/5 border border-info/20 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-black text-navy text-base">{r.customerName}</p>
+                    <span className="text-xs text-info font-bold">{STATUS_LABEL[r.status] ?? r.status}</span>
                   </div>
+                  <p className="text-xs text-navy/40 mt-0.5">{r.time}</p>
                   {r.companionNames.length > 0 && (
                     <p className="text-xs text-navy/40">同伴：{r.companionNames.join("、")}</p>
                   )}
@@ -249,53 +239,42 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
               ))}
             </ul>
 
-            <p className="text-xs font-bold text-navy/50 mb-1">誕生日</p>
-            {selectedDay.birthdays.length === 0 && (
-              <p className="text-navy/40 text-sm mb-2">対象者はいません。</p>
+            {/* 誕生日 */}
+            {selectedDay.birthdays.length > 0 && (
+              <>
+                <p className="text-xs font-bold text-navy/50 mb-2">誕生日</p>
+                <ul className="flex flex-col gap-1.5 mb-4">
+                  {selectedDay.birthdays.map((b) => (
+                    <li key={b.id} className="text-base font-bold text-[#7a4fa3]">
+                      🎂 {b.customerName}
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
-            <ul className="flex flex-col gap-1 mb-3">
-              {selectedDay.birthdays.map((b) => (
-                <li key={b.id} className="text-sm">🎂 {b.customerName}</li>
-              ))}
-            </ul>
 
-            <p className="text-xs font-bold text-navy/50 mb-1">ボトル期限</p>
-            {selectedDay.bottleExpiries.length === 0 && (
-              <p className="text-navy/40 text-sm mb-2">対象のボトルはありません。</p>
-            )}
-            <ul className="flex flex-col gap-1 mb-3">
-              {selectedDay.bottleExpiries.map((b) => (
-                <li key={b.id} className="text-sm">
-                  🍷 {b.customerName}（{b.bottleLabel}）
-                </li>
-              ))}
-            </ul>
-
+            {/* イベント・休日 */}
             {(selectedDay.isHoliday || selectedDay.isClosedDay || selectedDay.events.length > 0) && (
               <>
-                <p className="text-xs font-bold text-navy/50 mb-1">イベント・休日</p>
+                <p className="text-xs font-bold text-navy/50 mb-2">イベント・休日</p>
                 <ul className="flex flex-col gap-1.5">
                   {selectedDay.isClosedDay && (
-                    <li className="text-sm font-bold text-danger">
+                    <li className="text-base font-bold text-danger">
                       🚫 店休日{selectedDay.closedNote ? ` — ${selectedDay.closedNote}` : ""}
                     </li>
                   )}
                   {selectedDay.isHoliday && (
-                    <li className="text-sm font-bold text-danger/80">
+                    <li className="text-base font-bold text-danger/80">
                       🔴 {selectedDay.holidayName}（祝日）
                     </li>
                   )}
                   {selectedDay.events.map((ev) => (
-                    <li key={ev.id} className="text-sm text-navy">
-                      <p>{ev.emoji} {ev.title}</p>
+                    <li key={ev.id} className="text-base text-navy">
+                      {ev.emoji} {ev.title}
                       {ev.url && (
-                        <a
-                          href={ev.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-info underline"
-                        >
-                          🔗 詳細を見る
+                        <a href={ev.url} target="_blank" rel="noopener noreferrer"
+                           className="text-xs text-info underline ml-2">
+                          🔗 詳細
                         </a>
                       )}
                     </li>
