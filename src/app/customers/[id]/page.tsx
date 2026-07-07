@@ -51,10 +51,18 @@ export default async function CustomerDetailPage({
 
   const { customer, visits, bottles, associatedBottles, champagnes, notes, cautionRegisteredByName } = detail;
   const pace = computePace(customer);
+  const isFirstVisit = customer.visit_count === 1;
 
   return (
     <AppShell title="顧客詳細" staffName={profile.display_name} role={profile.role}>
-      {visitSaved === "1" && (
+      {/* 初来店バナー */}
+      {isFirstVisit && visitSaved === "1" && (
+        <div className="mb-4 rounded-app border-2 border-gold bg-yellow-50 p-4 text-center">
+          <p className="font-black text-2xl text-navy mb-1">🎉 初来店ありがとうございます！</p>
+          <p className="text-base text-navy/60">お名前・ふりがな・誕生日を登録しておくと便利です。</p>
+        </div>
+      )}
+      {visitSaved === "1" && !isFirstVisit && (
         <div className="mb-4 rounded-app border-2 border-success bg-success/10 p-4">
           <p className="font-black text-success mb-1">✓ 来店を保存しました</p>
           <p className="text-sm text-navy/60">
@@ -208,10 +216,13 @@ export default async function CustomerDetailPage({
               <p className="text-navy/40 text-sm">登録されたボトルはありません。</p>
             )}
             <ul className="flex flex-col gap-2">
-              {bottles.map((b) => (
+              {bottles.map((b, bi) => (
                 <li key={b.id} className="flex items-center justify-between gap-2 border-b border-navy/5 pb-2 last:border-0">
                   <div className="min-w-0">
                     <p className="font-bold text-navy truncate">
+                      {bi === bottles.length - 1 && (
+                        <span className="text-xs font-black text-gold mr-1">初回🍷</span>
+                      )}
                       {b.bottle_type && <span>{b.bottle_type}</span>}
                       {b.bottle_type && b.bottle_name && b.bottle_name !== b.bottle_type && (
                         <span className="text-navy/40 font-normal">（{b.bottle_name}）</span>

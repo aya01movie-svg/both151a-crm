@@ -37,7 +37,10 @@ export type CalendarDayData = {
   visits: CalendarVisitEntry[];
   reservations: CalendarReservationEntry[];
   birthdays: CalendarBirthdayEntry[];
+  /** store/local/convention/sport/other タイプのイベント（staff は別フラグ） */
   events: { id: string; title: string; emoji: string; event_type: string; url?: string | null }[];
+  /** スタッフ欠席イベント（event_type === "staff"） */
+  staffEvents: { id: string; title: string; emoji: string; url?: string | null }[];
   isHoliday: boolean;
   holidayName: string | null;
   isClosedDay: boolean;
@@ -65,6 +68,7 @@ function emptyDay(date: string): CalendarDayData {
     reservations: [],
     birthdays: [],
     events: [],
+    staffEvents: [],
     isHoliday: false,
     holidayName: null,
     isClosedDay: false,
@@ -255,7 +259,14 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
   const eventByDate = resolveEventDatesForMonth(storeEvents, year, month);
   for (const [dateStr, evList] of eventByDate) {
     const day = days[dateStr];
-    if (day) day.events.push(...evList);
+    if (!day) continue;
+    for (const ev of evList) {
+      if (ev.event_type === "staff") {
+        day.staffEvents.push({ id: ev.id, title: ev.title, emoji: ev.emoji, url: ev.url });
+      } else {
+        day.events.push(ev);
+      }
+    }
   }
 
   for (const h of holidaysData) {

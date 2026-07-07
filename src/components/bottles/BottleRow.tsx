@@ -19,7 +19,7 @@ const STATUS_OPTIONS: { value: BottleStatus; label: string }[] = [
 ];
 
 const STATUS_LABEL: Record<string, string> = {
-  kept:     "🍾 預かり中",
+  kept:     "🍷 預かり中",
   finished: "飲み切り済",
   returned: "返却済",
   disposed: "廃棄済",
@@ -53,7 +53,7 @@ export function BottleRow({ bottle }: { bottle: BottleWithCustomer }) {
             登録：{formatDate(bottle.start_date)}　状態：{STATUS_LABEL[bottle.status] ?? bottle.status}
           </p>
           {bottle.companion_names && bottle.companion_names.length > 0 && (
-            <p className="text-sm font-black text-info mt-1 bg-info/5 rounded px-2 py-1 inline-block">
+            <p className="text-xs font-bold text-info mt-1 bg-info/5 rounded px-1.5 py-0.5 inline-block">
               👥 同伴：{bottle.companion_names.join("、")}
             </p>
           )}
