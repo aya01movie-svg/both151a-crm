@@ -18,19 +18,27 @@ function calLink(y: number, m: number) {
   return `/dashboard?year=${y}&month=${m}`;
 }
 
+const YEAR_RANGE_START = 2020;
+
 export function CalendarClient({ data }: { data: CalendarMonthData }) {
   const { year, month, days } = data;
   const today    = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const thisYear = today.getFullYear();
 
   const [selectedDate, setSelectedDate] = useState<string | null>(
     year === today.getFullYear() && month === today.getMonth()+1 ? todayStr : null
   );
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickYear, setPickYear] = useState(year);
 
   const startWeekday = new Date(year, month-1, 1).getDay();
   const daysInMonth  = new Date(year, month, 0).getDate();
   const prev = new Date(year, month-2, 1);
   const next = new Date(year, month, 1);
+  const isCurrentMonth = year === thisYear && month === today.getMonth()+1;
+  const yearOptions: number[] = [];
+  for (let y = YEAR_RANGE_START; y <= thisYear; y++) yearOptions.push(y);
 
   const cells: (string|null)[] = [];
   for (let i=0; i<startWeekday; i++) cells.push(null);
@@ -43,24 +51,85 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
   return (
     <div>
       {/* ── 月ナビ ─────────────────────── */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2">
         <Link href={calLink(prev.getFullYear(), prev.getMonth()+1)}
-              className="btn-base px-3 min-h-10 bg-white border-2 border-navy/10 text-navy">
+              className="btn-base px-3 min-h-10 bg-white border-2 border-navy/10 text-navy shrink-0">
           <ChevronLeft size={20} />
         </Link>
-        <span className="text-xl font-black text-navy">{year}年{month}月</span>
-        <Link href={calLink(next.getFullYear(), next.getMonth()+1)}
-              className="btn-base px-3 min-h-10 bg-white border-2 border-navy/10 text-navy">
-          <ChevronRight size={20} />
-        </Link>
+
+        <button type="button"
+          onClick={() => { setPickYear(year); setPickerOpen(true); }}
+          className="text-xl font-black text-navy px-2 py-1 rounded-app hover:bg-navy/5">
+          {year}年{month}月
+        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {!isCurrentMonth && (
+            <Link href={calLink(thisYear, today.getMonth()+1)}
+                  className="btn-base px-3 min-h-10 bg-navy/5 border-2 border-navy/10 text-navy text-sm font-bold">
+              今月
+            </Link>
+          )}
+          <Link href={calLink(next.getFullYear(), next.getMonth()+1)}
+                className="btn-base px-3 min-h-10 bg-white border-2 border-navy/10 text-navy">
+            <ChevronRight size={20} />
+          </Link>
+        </div>
       </div>
+
+      {/* ── 年月選択ポップアップ ─────────── */}
+      {pickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4"
+             onClick={() => setPickerOpen(false)}>
+          <div className="w-full max-w-sm rounded-app bg-white p-4 max-h-[80vh] overflow-y-auto"
+               onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-base font-black text-navy">年月を選択</p>
+              <button type="button" onClick={() => setPickerOpen(false)}
+                className="text-navy/40 text-sm font-bold px-2 py-1">✕</button>
+            </div>
+
+            {/* 年選択 */}
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {yearOptions.map((y) => (
+                <button key={y} type="button"
+                  onClick={() => setPickYear(y)}
+                  className={`px-3 py-1.5 rounded-app text-sm font-bold border-2 ${
+                    y===pickYear ? "bg-navy text-white border-navy" : "border-navy/10 text-navy/60"
+                  }`}>
+                  {y}年
+                </button>
+              ))}
+            </div>
+
+            {/* 月選択 */}
+            <div className="grid grid-cols-4 gap-1.5 mb-4">
+              {Array.from({length:12},(_,i)=>i+1).map((m) => (
+                <Link key={m} href={calLink(pickYear, m)}
+                  onClick={() => setPickerOpen(false)}
+                  className={`text-center py-2.5 rounded-app text-sm font-bold border-2 ${
+                    pickYear===year && m===month ? "bg-gold text-navy border-gold" : "border-navy/10 text-navy/70"
+                  }`}>
+                  {m}月
+                </Link>
+              ))}
+            </div>
+
+            <Link href={calLink(thisYear, today.getMonth()+1)}
+              onClick={() => setPickerOpen(false)}
+              className="btn-base min-h-11 w-full bg-navy/5 border-2 border-navy/10 text-navy text-sm font-bold">
+              今月に戻る
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── カレンダーグリッド ─────────── */}
       <Card className="mb-4 p-2">
         {/* 曜日ヘッダー */}
         <div className="grid grid-cols-7 mb-1">
           {WEEKDAYS.map((w, i) => (
-            <div key={w} className={`text-center text-xs font-bold py-1 ${
+            <div key={w} className={`text-center text-sm font-bold py-1 ${
               i===0 ? "text-danger" : i===6 ? "text-info" : "text-navy/40"
             }`}>{w}</div>
           ))}
@@ -103,20 +172,19 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 onClick={() => setSelectedDate(dateStr===selectedDate ? null : dateStr)}
                 className={`text-left rounded border-2 p-0.5 min-h-[72px] transition-colors hover:border-gold/60 ${bg}`}
               >
-                {/* 日付数字 — 大きく太字、マス上部固定 */}
-                <span className={`block text-lg font-black leading-tight text-center ${numColor}${isToday ? " underline decoration-2" : ""}`}>
+                {/* 日付数字 — さらに大きく太字、マス上部固定 */}
+                <span className={`block text-xl font-black leading-tight text-center ${numColor}${isToday ? " underline decoration-2" : ""}`}>
                   {dd}
                 </span>
-                {/* インジケーター */}
+                {/* インジケーター — 来店・予約・誕生日・スタッフ休みのみ（一般イベント・祝日バッジは表示しない） */}
                 <div className="flex flex-col items-center gap-0.5 mt-0.5">
-                  {hasStaffClose && <span className="text-[9px] font-black text-danger leading-none">休</span>}
-                  {hasHoliday   && <span className="text-[9px] font-black text-danger/80 leading-none">祝</span>}
+                  {hasStaffClose && <span className="text-xs font-black text-danger leading-none">休</span>}
                   {hasStaff     && day.staffEvents.slice(0,2).map(s => (
-                    <span key={s.id} className="text-[11px] leading-none">{s.emoji}</span>
+                    <span key={s.id} className="text-sm leading-none">{s.emoji}</span>
                   ))}
-                  {hasVisit     && <span className="text-[9px] font-black text-success leading-none">来{day.visits.length}</span>}
-                  {hasRes       && <span className="text-[9px] font-black text-info leading-none">予{day.reservations.length}</span>}
-                  {hasBirthday  && <span className="text-[9px] leading-none">🎂</span>}
+                  {hasVisit     && <span className="text-xs font-black text-success leading-none">来{day.visits.length}</span>}
+                  {hasRes       && <span className="text-xs font-black text-info leading-none">予{day.reservations.length}</span>}
+                  {hasBirthday  && <span className="text-sm leading-none">🎂</span>}
                   {!hasContent  && <span className="text-[9px] text-navy/15 leading-none">–</span>}
                 </div>
               </button>

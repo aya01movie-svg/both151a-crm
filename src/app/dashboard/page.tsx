@@ -138,12 +138,9 @@ export default async function DashboardPage({
 
       {/* ── 来店・予約一覧 ─────────────────── */}
       <Card>
-        {/* ヘッダー */}
+        {/* ヘッダー（「本日の来店」「本日の予約」カウンター表示は削除） */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-black text-navy">本日の記録</h2>
-          <span className="text-sm text-navy/40">
-            来店{todayVisits.length} / 予約{todayReservations.length}
-          </span>
         </div>
 
         {todayVisits.length === 0 && todayReservations.length === 0 && (
@@ -153,7 +150,7 @@ export default async function DashboardPage({
         {/* 予約 */}
         {todayReservations.length > 0 && (
           <div className="mb-4">
-            <p className="text-sm font-black text-info mb-2">予約</p>
+            <p className="text-base font-black text-info mb-2">予約</p>
             <ul className="flex flex-col gap-2">
               {todayReservations.map((r) => (
                 <li key={r.id}
@@ -176,10 +173,10 @@ export default async function DashboardPage({
           </div>
         )}
 
-        {/* 来店済み */}
+        {/* 来店 */}
         {todayVisits.length > 0 && (
           <div>
-            <p className="text-sm font-black text-success mb-2">来店済み</p>
+            <p className="text-base font-black text-success mb-2">来店</p>
             <ul className="flex flex-col gap-2">
               {todayVisits.map((v) => (
                 <li key={v.id}
@@ -200,7 +197,7 @@ export default async function DashboardPage({
               ))}
             </ul>
 
-            {/* 合計 */}
+            {/* 合計（一覧の一番下に1回だけ表示） */}
             <div className="mt-3 flex justify-end border-t border-navy/10 pt-3">
               <p className="text-base font-black text-navy">
                 売上合計　{yen(todayTotal)}

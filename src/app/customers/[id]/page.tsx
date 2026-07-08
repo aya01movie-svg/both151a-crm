@@ -53,6 +53,12 @@ export default async function CustomerDetailPage({
   const pace = computePace(customer);
   const isFirstVisit = customer.visit_count === 1;
 
+  // 「初回🍷」バッジ: bottles配列は状態/期限日順で並んでいるため、
+  // 表示順ではなく登録日時(created_at)が最も古いボトルを正しく特定する。
+  const firstBottleId = bottles.length > 0
+    ? bottles.reduce((min, b) => (b.created_at < min.created_at ? b : min), bottles[0]).id
+    : null;
+
   return (
     <AppShell title="顧客詳細" staffName={profile.display_name} role={profile.role}>
       {/* 初来店バナー */}
@@ -179,7 +185,7 @@ export default async function CustomerDetailPage({
           <ul className="flex flex-col gap-3 max-h-[420px] overflow-y-auto">
             {visits.map((v) => (
               <li key={v.id} className="border-b border-navy/5 pb-3 last:border-0">
-                <div className="flex justify-between text-sm font-bold text-navy">
+                <div className="flex justify-between items-baseline text-lg font-black text-navy">
                   <span>{formatDateTime(v.visited_at)}</span>
                   <span>{v.role === "primary" ? yen(v.amount) : "同伴"}</span>
                 </div>
@@ -216,12 +222,14 @@ export default async function CustomerDetailPage({
               <p className="text-navy/40 text-sm">登録されたボトルはありません。</p>
             )}
             <ul className="flex flex-col gap-2">
-              {bottles.map((b, bi) => (
+              {bottles.map((b) => (
                 <li key={b.id} className="flex items-center justify-between gap-2 border-b border-navy/5 pb-2 last:border-0">
                   <div className="min-w-0">
                     <p className="font-bold text-navy truncate">
-                      {bi === bottles.length - 1 && (
-                        <span className="text-xs font-black text-gold mr-1">初回🍷</span>
+                      {b.id === firstBottleId && (
+                        <span className="text-sm font-black text-navy bg-gold rounded-full px-2 py-0.5 mr-1.5 inline-block">
+                          初回🍷
+                        </span>
                       )}
                       {b.bottle_type && <span>{b.bottle_type}</span>}
                       {b.bottle_type && b.bottle_name && b.bottle_name !== b.bottle_type && (

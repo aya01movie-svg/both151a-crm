@@ -7,11 +7,11 @@ import type { StoreEvent } from "@/lib/data/events";
 
 const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
-/** スタッフ休みクイックボタン */
+/** スタッフ休みクイックボタン（動物＋🚫で「お休み」を表現） */
 const STAFF_EMOJIS = [
-  { emoji: "🐑", label: "スタッフA" },
-  { emoji: "🐯", label: "スタッフB" },
-  { emoji: "🐰", label: "スタッフC" },
+  { emoji: "🐑🚫", label: "スタッフA" },
+  { emoji: "🐯🚫", label: "スタッフB" },
+  { emoji: "🐰🚫", label: "スタッフC" },
 ];
 
 type ScheduleType = "single" | "range" | "weekly" | "annual";
@@ -32,14 +32,20 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
   const [editing, setEditing] = useState<Partial<StoreEvent> | null>(null);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  const todayStr = (() => {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  })();
+  // スタッフ休み登録用の日付（日付選択に対応。デフォルトは今日）
+  const [staffOffDate, setStaffOffDate] = useState(todayStr);
+
   function startNew() { setEditing(blank()); setMessage(null); }
   function startEdit(ev: StoreEvent) { setEditing({ ...ev }); setMessage(null); }
   function cancel() { setEditing(null); }
 
-  /** スタッフ休みを当日付で即登録 */
+  /** スタッフ休みを選択した日付で登録（未選択時は当日） */
   function quickStaffOff(emoji: string, label: string) {
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+    const dateStr = staffOffDate || todayStr;
     startTransition(async () => {
       try {
         await saveStoreEventAction({
@@ -105,9 +111,14 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
         </p>
       )}
 
-      {/* スタッフ休みクイックボタン */}
+      {/* スタッフ休みクイックボタン（日付選択対応） */}
       <div>
-        <p className="text-xs font-bold text-navy/50 mb-2">スタッフ休みを今日付で登録</p>
+        <p className="text-xs font-bold text-navy/50 mb-2">スタッフ休みを登録</p>
+        <div className="mb-2">
+          <input type="date" value={staffOffDate}
+            onChange={(e) => setStaffOffDate(e.target.value)}
+            className="min-h-11 rounded-app border-2 border-navy/10 bg-white px-3 text-sm focus:outline-none focus:border-gold" />
+        </div>
         <div className="flex gap-2 flex-wrap">
           {STAFF_EMOJIS.map((s) => (
             <button key={s.emoji} type="button" disabled={pending}
@@ -259,7 +270,7 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
                  ev.schedule_type === "annual"  ? `毎年${ev.annual_month}/${ev.annual_day}` :
                  ev.schedule_type === "range"   ? `${ev.start_date}〜${ev.end_date}` :
                  ev.start_date || ""}
-                {ev.event_type === "staff" && " 🐑スタッフ"}
+                {ev.event_type === "staff" && " ・スタッフ休み"}
               </p>
             </div>
             <div className="flex gap-1.5 shrink-0">

@@ -46,6 +46,10 @@ export default async function NoticePage() {
   ]);
 
   const today = new Date(todayJst);
+  // 曜日計算修正: today は "YYYY-MM-DD" をUTC午前0時として解釈したDateのため、
+  // サーバーのローカルタイムゾーン設定に左右されないよう getUTCDay() を使う
+  // （getDay() だとサーバーがUTC以外で動く場合に曜日が1日ズレることがあった）。
+  const todayDow = today.getUTCDay();
   function dayDiff(dateStr: string): number {
     return Math.round((new Date(dateStr).getTime() - today.getTime()) / 86400000);
   }
@@ -86,8 +90,8 @@ export default async function NoticePage() {
     } else if (ev.schedule_type === "weekly" && ev.weekly_day !== null) {
       for (let i=0; i<=30; i++) {
         const d = new Date(today.getTime()+i*86400000);
-        if (d.getDay()===ev.weekly_day) {
-          const ds=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        if (d.getUTCDay()===ev.weekly_day) {
+          const ds=`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
           const sub = i===0?"本日":i===1?"明日":`毎週${WEEKDAY_JA[ev.weekly_day]} / 次回${dateLabel(ds)}`;
           rows.push({ key:`ev-${ev.id}-${ds}`, emoji: ev.emoji, title: ev.title, subtitle: sub, url: ev.url, bg:"bg-[#f5f0ff]" });
           break;
@@ -107,7 +111,7 @@ export default async function NoticePage() {
       const ds = `${now.getFullYear()}-${pad(ev.annual_month)}-${pad(ev.annual_day)}`;
       if (dayDiff(ds) !== 0) continue;
     } else if (ev.schedule_type === "weekly" && ev.weekly_day !== null) {
-      if (now.getDay() !== ev.weekly_day) continue;
+      if (todayDow !== ev.weekly_day) continue;
     } else continue;
     rows.push({ key:`store-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle:"本日", url: ev.url, bg:"bg-[#e8f4ff]" });
   }
@@ -174,7 +178,7 @@ export default async function NoticePage() {
                 <div>
                   <p className="font-black text-navy text-xl">{c.display_name}様</p>
                   <p className="text-base text-navy/60 mt-0.5">
-                    {birthdayLabel(c.birthday)}　{c.daysUntil===0?"🎉 本日！":`あと${c.daysUntil}日`}
+                    {birthdayLabel(c.birthday)}{c.daysUntil===0 ? "　🎉 本日！" : ""}
                   </p>
                 </div>
               </li>
