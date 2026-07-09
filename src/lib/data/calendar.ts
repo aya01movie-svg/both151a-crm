@@ -60,12 +60,6 @@ export type CalendarMonthData = {
   monthTotalTip: number;
 };
 
-/** 年間・月別の売上合計（カレンダー下部の「月別売上」一覧用）。 */
-export type YearlyMonthTotal = {
-  month: number; // 1-12
-  amount: number;
-};
-
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -291,39 +285,4 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
   }
 
   return { year, month, days, monthTotalAmount, monthTotalTip };
-}
-
-/**
- * 指定年の月別売上合計（1月〜12月・全月分）を取得する。
- * ホームカレンダー最下部の「月別売上」一覧表示用。
- * 無効化された来店（invalidated = true）は集計から除外する。
- * データが無い月も0円として結果に含める（常に1〜12月ぶん揃った配列を返す）。
- */
-export async function getYearlyMonthTotals(year: number): Promise<YearlyMonthTotal[]> {
-  const supabase = await createClient();
-
-  const yearStart = `${year}-01-01`;
-  const yearEnd = `${year}-12-31`;
-
-  // 年始0:00〜翌年始0:00（exclusive）をJST基準でUTCへ変換してクエリする
-  const { startIso: yearStartIso } = jstDateRangeToUtcIso(yearStart);
-  const { endIso: yearEndIso } = jstDateRangeToUtcIso(yearEnd);
-
-  const { data } = await supabase
-    .from("visits")
-    .select("visited_at, amount")
-    .eq("invalidated", false)
-    .gte("visited_at", yearStartIso)
-    .lt("visited_at", yearEndIso);
-
-  const totals: YearlyMonthTotal[] = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, amount: 0 }));
-
-  for (const v of (data ?? []) as { visited_at: string; amount: number }[]) {
-    const m = Number(toJstDateString(v.visited_at).slice(5, 7));
-    if (m >= 1 && m <= 12) {
-      totals[m - 1].amount += v.amount;
-    }
-  }
-
-  return totals;
 }
