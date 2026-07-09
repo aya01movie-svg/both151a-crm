@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { searchCustomerNames, createVisit, getLastVisitInfo, type NewVisitInput } from "@/lib/data/visits";
+import { searchCustomerNames, createVisit, getLastVisitInfo, updateVisit, invalidateVisit, type NewVisitInput, type UpdateVisitInput } from "@/lib/data/visits";
 import { toErrorMessage } from "@/lib/error-message";
 import { jstLocalToUtcIso } from "@/lib/date";
-import type { SaveVisitState } from "./visits-state";
+import type { SaveVisitState, UpdateVisitState } from "./visits-state";
 
 /** 顧客名オートコンプリート用（第5章）。クライアントからデバウンスして呼び出す。 */
 export async function searchCustomersAction(query: string) {
@@ -114,4 +114,60 @@ export async function saveVisitAction(
       intent,
     };
   }
+}
+
+/**
+ * 来店登録の入力ミス修正（会計金額・日時・支払方法・メモなど）。
+ * 「来店登録を間違えた時に修正できない」というご要望に対応するための機能。
+ * 同伴者・タグの変更は含まない（visitsテーブル自身のカラムのみ更新）。
+ */
+export async function updateVisitAction(
+  _prevState: UpdateVisitState,
+  formData: FormData
+): Promise<UpdateVisitState> {
+  try {
+    const visitId = String(formData.get("visit_id") ?? "");
+    if (!visitId) return { error: "対象の来店情報が見つかりません。", success: false, customerId: null };
+
+    const receiptRequired = formData.get("receipt_required") === "1";
+
+    const input: UpdateVisitInput = {
+      visitId,
+      visitedAt: (() => {
+        const raw = String(formData.get("visited_at") ?? "").trim();
+        return raw ? jstLocalToUtcIso(raw) : new Date().toISOString();
+      })(),
+      amount: Number(formData.get("amount") ?? 0),
+      tip: Number(formData.get("tip") ?? 0),
+      paymentMethod: String(formData.get("payment_method") ?? "cash") as UpdateVisitInput["paymentMethod"],
+      seatType: (String(formData.get("seat_type") ?? "") || null) as UpdateVisitInput["seatType"],
+      receiptRequired,
+      receiptName: receiptRequired ? String(formData.get("receipt_name") ?? "").trim() || null : null,
+      memo: String(formData.get("memo") ?? "").trim() || null,
+    };
+
+    const result = await updateVisit(input);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/calendar");
+    revalidatePath("/customers");
+    revalidatePath(`/customers/${result.customerId}`);
+
+    return { error: null, success: true, customerId: result.customerId };
+  } catch (e) {
+    return {
+      error: toErrorMessage(e, "更新できませんでした。もう一度お試しください。"),
+      success: false,
+      customerId: null,
+    };
+  }
+}
+
+/** 来店登録そのものが誤りだった場合の無効化（一覧・集計から除外。削除はしない）。 */
+export async function invalidateVisitAction(visitId: string, customerId: string) {
+  await invalidateVisit(visitId);
+  revalidatePath("/dashboard");
+  revalidatePath("/calendar");
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${customerId}`);
 }

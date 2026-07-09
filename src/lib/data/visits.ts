@@ -197,3 +197,114 @@ export async function createVisit(input: NewVisitInput) {
 
   return { visitId: result.visit_id, customerId: result.customer_id };
 }
+
+/**
+ * 来店編集画面用に、単一の来店（visits行）と代表顧客名を取得する。
+ * 会計金額・日時・支払方法などの入力ミスを後から修正できるようにするための機能。
+ * 同伴者・タグ・顧客の変更はスコープ外（複雑な多対多関係を安全に扱うため、
+ * まずは「入力ミスの多い基本項目」の修正に対応を限定している）。
+ */
+export type VisitEditDetail = {
+  id: string;
+  primary_customer_id: string;
+  customerName: string;
+  visited_at: string;
+  amount: number;
+  tip: number;
+  payment_method: PaymentMethod;
+  seat_type: SeatType | null;
+  receipt_required: boolean;
+  receipt_name: string | null;
+  memo: string | null;
+  invalidated: boolean;
+};
+
+export async function getVisitForEdit(visitId: string): Promise<VisitEditDetail | null> {
+  const supabase = await createClient();
+  const { data: visit, error } = await supabase
+    .from("visits")
+    .select("*")
+    .eq("id", visitId)
+    .single();
+  if (error || !visit) return null;
+
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("display_name")
+    .eq("id", visit.primary_customer_id)
+    .single();
+
+  return {
+    id: visit.id,
+    primary_customer_id: visit.primary_customer_id,
+    customerName: customer?.display_name ?? "",
+    visited_at: visit.visited_at,
+    amount: visit.amount,
+    tip: visit.tip,
+    payment_method: visit.payment_method,
+    seat_type: visit.seat_type,
+    receipt_required: visit.receipt_required,
+    receipt_name: visit.receipt_name,
+    memo: visit.memo,
+    invalidated: visit.invalidated,
+  };
+}
+
+export type UpdateVisitInput = {
+  visitId: string;
+  visitedAt: string; // ISO文字列
+  amount: number;
+  tip: number;
+  paymentMethod: PaymentMethod;
+  seatType: SeatType | null;
+  receiptRequired: boolean;
+  receiptName: string | null;
+  memo: string | null;
+};
+
+/**
+ * 来店登録の入力ミス修正用（会計金額・日時・支払方法など基本項目のみ）。
+ * 同伴者・タグの変更は含まない（visits テーブル自身のカラムのみを更新する
+ * シンプルな処理とすることで、安全に「後から直せる」機能を提供する）。
+ */
+export async function updateVisit(input: UpdateVisitInput): Promise<{ customerId: string }> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("visits")
+    .update({
+      visited_at: input.visitedAt,
+      amount: input.amount,
+      tip: input.tip,
+      payment_method: input.paymentMethod,
+      seat_type: input.seatType,
+      receipt_required: input.receiptRequired,
+      receipt_name: input.receiptName,
+      memo: input.memo,
+    })
+    .eq("id", input.visitId)
+    .select("primary_customer_id")
+    .single();
+
+  if (error || !data) {
+    throw new Error(toErrorMessage(error, "来店情報の更新に失敗しました。もう一度お試しください。"));
+  }
+
+  return { customerId: data.primary_customer_id };
+}
+
+/** 来店登録そのものが誤りだった場合、無効化する（一覧・集計から除外。削除はしない）。 */
+export async function invalidateVisit(visitId: string): Promise<{ customerId: string }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("visits")
+    .update({ invalidated: true })
+    .eq("id", visitId)
+    .select("primary_customer_id")
+    .single();
+
+  if (error || !data) {
+    throw new Error(toErrorMessage(error, "無効化に失敗しました（管理者アカウントか確認してください）。"));
+  }
+  return { customerId: data.primary_customer_id };
+}

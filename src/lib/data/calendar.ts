@@ -4,6 +4,7 @@ import { listStoreEvents, listClosedDays, listHolidays, resolveEventDatesForMont
 
 export type CalendarVisitEntry = {
   id: string;
+  customerId: string;
   customerName: string;
   companionNames: string[];
   amount: number;
@@ -14,6 +15,7 @@ export type CalendarVisitEntry = {
 
 export type CalendarReservationEntry = {
   id: string;
+  customerId: string;
   customerName: string;
   companionNames: string[];
   time: string;
@@ -23,6 +25,7 @@ export type CalendarReservationEntry = {
 
 export type CalendarBirthdayEntry = {
   id: string;
+  customerId: string;
   customerName: string;
 };
 
@@ -212,6 +215,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     if (!day) continue;
     day.visits.push({
       id: v.id,
+      customerId: v.primary_customer_id,
       customerName: calCustNameById.get(v.primary_customer_id) ?? "",
       companionNames: visitCompanionsByVisit.get(v.id) ?? [],
       amount: v.amount,
@@ -231,6 +235,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     if (!day) continue;
     day.reservations.push({
       id: r.id,
+      customerId: r.customer_id,
       customerName: reservationCustomerNameById.get(r.customer_id) ?? "",
       companionNames: reservationCompanionsByReservation.get(r.id) ?? [],
       time: toJstTimeString(r.reserved_at),
@@ -246,7 +251,7 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     const dateStr = `${year}-${pad2(month)}-${d}`;
     const day = days[dateStr];
     if (!day) continue;
-    day.birthdays.push({ id: c.id, customerName: c.display_name });
+    day.birthdays.push({ id: c.id, customerId: c.id, customerName: c.display_name });
   }
 
   // イベント・祝日・店休日を並行取得してカレンダーマスに反映する

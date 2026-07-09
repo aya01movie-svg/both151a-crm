@@ -16,3 +16,15 @@ export const initialSaveVisitState: SaveVisitState = {
   customerId: null,
   intent: null,
 };
+
+export type UpdateVisitState = {
+  error: string | null;
+  success: boolean;
+  customerId: string | null;
+};
+
+export const initialUpdateVisitState: UpdateVisitState = {
+  error: null,
+  success: false,
+  customerId: null,
+};
