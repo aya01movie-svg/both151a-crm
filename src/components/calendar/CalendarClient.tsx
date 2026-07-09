@@ -316,18 +316,6 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
           )}
         </Card>
       )}
-
-      {/* ── 表示中の月の売上合計（カレンダー最下部）─────────
-          「今月」を見ているときはHOME上部のKPIカード「今月売上」と重複するため
-          表示しない。今月以外の月を開いたときだけ、その月の合計を1行表示する。 */}
-      {!isCurrentMonth && (
-        <Card>
-          <div className="flex items-center justify-between rounded-app bg-navy/5 px-4 py-3">
-            <p className="text-sm font-bold text-navy/60">{month}月の売上合計</p>
-            <p className="text-xl font-black text-navy">{yen(data.monthTotalAmount)}</p>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

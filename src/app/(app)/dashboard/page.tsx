@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDashboardData } from "@/lib/data/dashboard";
+import { getDashboardData, getYearlyMonthlyAmounts } from "@/lib/data/dashboard";
 import { getMonthSummary } from "@/lib/data/calendar";
 import { listCustomers } from "@/lib/data/customers";
 import { Card } from "@/components/ui/Card";
@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type SearchParams = Promise<{ q?: string; year?: string; month?: string }>;
+
+// HOME検索窓にこの文字列を入力したときだけ、月別売上の内訳を表示する。
+const MONTHLY_SALES_QUERY = "月別売上";
 
 export default async function DashboardPage({
   searchParams,
@@ -26,12 +29,16 @@ export default async function DashboardPage({
 
   // 検索クエリ
   const q = params.q?.trim() ?? "";
+  const isMonthlySalesQuery = q === MONTHLY_SALES_QUERY;
 
-  const [data, calData, searchResult] = await Promise.all([
+  const [data, calData, searchResult, monthlySales] = await Promise.all([
     getDashboardData(),
     getMonthSummary(year, month),
-    q ? listCustomers({ search: q, page: 0 }) : Promise.resolve(null),
+    q && !isMonthlySalesQuery ? listCustomers({ search: q, page: 0 }) : Promise.resolve(null),
+    isMonthlySalesQuery ? getYearlyMonthlyAmounts(year) : Promise.resolve(null),
   ]);
+
+  const yearTotal = monthlySales ? monthlySales.reduce((sum, m) => sum + m.amount, 0) : 0;
 
   return (
     <>
@@ -81,7 +88,7 @@ export default async function DashboardPage({
       </form>
 
       {/* ── 検索結果（インライン） ──────── */}
-      {q && searchResult && (
+      {q && !isMonthlySalesQuery && searchResult && (
         <Card className="mb-4">
           <p className="text-xs font-black text-navy/50 mb-3">
             「{q}」の検索結果 {searchResult.customers.length}件
@@ -114,15 +121,32 @@ export default async function DashboardPage({
       )}
 
       {/* ── カレンダー ─────────────────────── */}
-      {/* 「本日の売上合計」は、選択中の日付に連動する形でカレンダー内
-          （選択日の詳細パネル）に表示するよう変更した。以前はここに固定で
-          「今日」の合計だけを表示していたため、月を切り替えると0円になったり、
-          カレンダーで選んだ日と表示金額が一致しないという不具合があったため。
-          カレンダー最下部には、表示中の月が「今月」以外のときだけその月の
-          売上合計を表示する（CalendarClient内で判定）。 */}
       <div className="mb-4">
         <CalendarClient data={calData} />
       </div>
+
+      {/* ── 月別売上（検索窓に「月別売上」と入力したときだけ表示） ──────
+          カレンダーで表示中の年（year）を対象に1〜12月の内訳＋年合計を表示する。
+          通常時は非表示（見えすぎ防止のため、v1.2でカレンダー常設フッターから
+          この検索トリガー方式に変更）。 */}
+      {isMonthlySalesQuery && monthlySales && (
+        <Card className="mb-4">
+          <p className="text-xs font-black text-navy/50 mb-3">{year}年 月別売上</p>
+          <ul className="flex flex-col gap-1.5 mb-3">
+            {monthlySales.map((m) => (
+              <li key={m.month}
+                  className="flex items-center justify-between rounded-app bg-navy/5 px-4 py-2.5">
+                <p className="text-sm font-bold text-navy/60">{m.month}月</p>
+                <p className="text-base font-black text-navy">{yen(m.amount)}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center justify-between rounded-app bg-gold/15 border-2 border-gold/40 px-4 py-3">
+            <p className="text-sm font-black text-navy">{year}年 年合計</p>
+            <p className="text-xl font-black text-navy">{yen(yearTotal)}</p>
+          </div>
+        </Card>
+      )}
     </>
   );
 }

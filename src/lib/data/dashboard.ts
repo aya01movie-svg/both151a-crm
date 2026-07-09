@@ -249,3 +249,38 @@ export async function getMonthlyGraphData(): Promise<MonthlyGraphData[]> {
     thisYearPeople: thisYearByMonth[i].people,
   }));
 }
+
+/**
+ * 指定年の月別売上合計（1〜12月）。
+ * HOME検索窓に「月別売上」と入力したときだけ表示する内訳用（v1.2追加）。
+ * カレンダーで表示中の年（year）を対象にする。
+ */
+export type YearlyMonthlyAmount = {
+  month: number; // 1-12
+  amount: number;
+};
+
+export async function getYearlyMonthlyAmounts(year: number): Promise<YearlyMonthlyAmount[]> {
+  const supabase = await createClient();
+
+  const { startIso: yearStartIso } = jstDateRangeToUtcIso(`${year}-01-01`);
+  const { startIso: nextYearStartIso } = jstDateRangeToUtcIso(`${year + 1}-01-01`);
+
+  const { data } = await supabase
+    .from("visits")
+    .select("visited_at, amount")
+    .eq("invalidated", false)
+    .gte("visited_at", yearStartIso)
+    .lt("visited_at", nextYearStartIso);
+
+  const amountsByMonth: number[] = Array(12).fill(0);
+  for (const v of (data ?? []) as { visited_at: string; amount: number }[]) {
+    const mo = Number(toJstDateString(v.visited_at).slice(5, 7)) - 1;
+    amountsByMonth[mo] += v.amount;
+  }
+
+  return Array.from({ length: 12 }, (_, i) => ({
+    month: i + 1,
+    amount: amountsByMonth[i],
+  }));
+}
