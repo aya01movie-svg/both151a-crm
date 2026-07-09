@@ -170,10 +170,12 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
             return (
               <button key={dateStr} type="button"
                 onClick={() => setSelectedDate(dateStr===selectedDate ? null : dateStr)}
-                className={`text-left rounded border-2 p-0.5 min-h-[72px] transition-colors hover:border-gold/60 ${bg}`}
+                className={`flex flex-col items-stretch text-left rounded border-2 p-0.5 min-h-[72px] transition-colors hover:border-gold/60 ${bg}`}
               >
-                {/* 日付数字 — さらに大きく太字、マス上部固定 */}
-                <span className={`block text-xl font-black leading-tight text-center ${numColor}${isToday ? " underline decoration-2" : ""}`}>
+                {/* 日付数字 — 予定の有無に関わらず常にマス上部へ固定表示する。
+                    flex-col + shrink-0 で明示的に高さを固定し、インジケーターの
+                    数が増減しても数字の位置がずれないようにする。 */}
+                <span className={`block shrink-0 text-xl font-black leading-tight text-center ${numColor}${isToday ? " underline decoration-2" : ""}`}>
                   {dd}
                 </span>
                 {/* インジケーター — 来店・予約・誕生日・スタッフ休みのみ（一般イベント・祝日バッジは表示しない） */}
@@ -208,10 +210,11 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 {selectedDay.visits.map((v) => (
                   <li key={v.id} className="rounded-app border border-success/20 bg-success/5 px-4 py-3">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-black text-navy text-lg">
+                      <Link href={`/customers/${v.customerId}`}
+                            className="font-black text-navy text-lg underline decoration-navy/20 hover:decoration-navy">
                         {v.hasChampagne && <span className="mr-1">🍾</span>}
                         {v.customerName}
-                      </p>
+                      </Link>
                       <p className="text-base font-black text-navy">{yen(v.amount)}</p>
                     </div>
                     {v.companionNames.length > 0 && (
@@ -219,6 +222,11 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                         同伴：{v.companionNames.join("、")}
                       </p>
                     )}
+                    <div className="mt-1.5">
+                      <Link href={`/visits/${v.id}/edit`} className="text-xs text-info underline">
+                        この来店を修正
+                      </Link>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -233,7 +241,10 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 {selectedDay.reservations.map((r) => (
                   <li key={r.id} className="rounded-app border border-info/20 bg-info/5 px-4 py-3">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-black text-navy text-lg">{r.customerName}</p>
+                      <Link href={`/customers/${r.customerId}`}
+                            className="font-black text-navy text-lg underline decoration-navy/20 hover:decoration-navy">
+                        {r.customerName}
+                      </Link>
                       <span className="text-sm font-bold text-info">{STATUS_LABEL[r.status]??r.status}</span>
                     </div>
                     {r.companionNames.length>0 && (
@@ -252,7 +263,11 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
               <p className="text-xs font-black text-[#7a4fa3] mb-2">誕生日</p>
               <ul className="flex flex-col gap-1.5">
                 {selectedDay.birthdays.map((b) => (
-                  <li key={b.id} className="text-base font-black text-[#7a4fa3]">🎂 {b.customerName}</li>
+                  <li key={b.id} className="text-base font-black text-[#7a4fa3]">
+                    🎂 <Link href={`/customers/${b.customerId}`} className="underline decoration-[#7a4fa3]/30 hover:decoration-[#7a4fa3]">
+                      {b.customerName}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -274,10 +289,13 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                   </li>
                 )}
                 {selectedDay.staffEvents.map((s) => (
-                  <li key={s.id} className="text-base font-bold text-navy/70">
-                    {s.emoji} {s.url
-                      ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline text-info">{s.title}</a>
-                      : s.title}
+                  <li key={s.id} className="text-base font-bold text-navy/70 flex items-center gap-0.5">
+                    <span>{s.emoji}</span>
+                    {s.url ? (
+                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline text-danger">{s.title}</a>
+                    ) : (
+                      <span className="text-danger">{s.title}</span>
+                    )}
                   </li>
                 ))}
               </ul>

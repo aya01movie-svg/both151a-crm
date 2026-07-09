@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { logout } from "@/lib/auth/actions";
 import { toJstDateString } from "@/lib/date";
+import { PageTitle } from "./PageTitle";
 
 type HeaderProps = {
-  title: string;
   staffName: string;
 };
 
@@ -27,7 +27,7 @@ function formatDateBar(isoDateStr: string): string {
  * 画面上部の共通ヘッダー。
  * 背景透過版MATTYアイコン + ヘッダー下に本日の日付バーを表示。
  */
-export function Header({ title, staffName }: HeaderProps) {
+export function Header({ staffName }: HeaderProps) {
   const todayStr = toJstDateString(new Date().toISOString());
   const dateLabel = formatDateBar(todayStr);
 
@@ -45,9 +45,7 @@ export function Header({ title, staffName }: HeaderProps) {
             className="shrink-0"
           />
           <span className="font-black text-xl tracking-tight shrink-0">MATTY</span>
-          <span className="text-navy-dark/60 text-sm truncate hidden sm:inline pl-1">
-            {title}
-          </span>
+          <PageTitle />
         </div>
         <form action={logout} className="flex items-center gap-3 shrink-0">
           <span className="text-sm text-navy-dark/70 hidden sm:inline">

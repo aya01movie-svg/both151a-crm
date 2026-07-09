@@ -7,11 +7,11 @@ import type { StoreEvent } from "@/lib/data/events";
 
 const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
-/** スタッフ休みクイックボタン（動物＋🚫で「お休み」を表現） */
+/** スタッフ休みクイックボタン（表示は「🐑休」のように動物＋休で表現） */
 const STAFF_EMOJIS = [
-  { emoji: "🐑🚫", label: "スタッフA" },
-  { emoji: "🐯🚫", label: "スタッフB" },
-  { emoji: "🐰🚫", label: "スタッフC" },
+  { emoji: "🐑", label: "スタッフA" },
+  { emoji: "🐯", label: "スタッフB" },
+  { emoji: "🐰", label: "スタッフC" },
 ];
 
 type ScheduleType = "single" | "range" | "weekly" | "annual";
@@ -19,7 +19,9 @@ type ScheduleType = "single" | "range" | "weekly" | "annual";
 function blank(): Partial<StoreEvent> {
   return {
     title: "",
-    emoji: "📅",
+    // v1.2修正: 絵文字を自動で付けない。頭に付けたい絵文字がある場合は
+    // タイトル欄に直接入力してもらう（例: 「⛩豊平神社」とそのまま入力）。
+    emoji: "",
     event_type: "other",
     schedule_type: "single",
     is_active: true,
@@ -43,20 +45,20 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
   function startEdit(ev: StoreEvent) { setEditing({ ...ev }); setMessage(null); }
   function cancel() { setEditing(null); }
 
-  /** スタッフ休みを選択した日付で登録（未選択時は当日） */
+  /** スタッフ休みを選択した日付で登録（未選択時は当日）。表示は「🐑休」の形。 */
   function quickStaffOff(emoji: string, label: string) {
     const dateStr = staffOffDate || todayStr;
     startTransition(async () => {
       try {
         await saveStoreEventAction({
-          title: `${label}お休み`,
+          title: "休",
           emoji,
           event_type: "staff",
           schedule_type: "single",
           start_date: dateStr,
           end_date: dateStr,
         });
-        setMessage({ type: "ok", text: `${label}お休みを登録しました（${dateStr}）` });
+        setMessage({ type: "ok", text: `${label}${emoji}休を登録しました（${dateStr}）` });
         router.refresh();
       } catch (e) {
         setMessage({ type: "err", text: e instanceof Error ? e.message : "登録に失敗しました。" });
@@ -71,7 +73,9 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
         await saveStoreEventAction({
           id: editing.id,
           title: editing.title!,
-          emoji: editing.emoji || "📅",
+          // v1.2修正: 絵文字を自動で補完しない。ユーザーがタイトルに直接
+          // 絵文字を入力する運用のため、空欄なら空欄のまま保存する。
+          emoji: editing.emoji || "",
           event_type: editing.event_type || "other",
           schedule_type: editing.schedule_type || "single",
           start_date: editing.start_date,
@@ -124,7 +128,7 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
             <button key={s.emoji} type="button" disabled={pending}
               onClick={() => quickStaffOff(s.emoji, s.label)}
               className="px-3 py-2 rounded-app border-2 border-navy/10 bg-white text-base font-bold hover:bg-navy/5 disabled:opacity-40">
-              {s.emoji} {s.label} お休み
+              {s.emoji}休（{s.label}）
             </button>
           ))}
         </div>
@@ -258,12 +262,16 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
       <ul className="flex flex-col gap-2">
         {events.map((ev) => (
           <li key={ev.id} className="flex items-start gap-2 p-3 rounded-app border border-navy/5 bg-white">
-            <span className="text-xl shrink-0">{ev.emoji}</span>
+            {ev.emoji && <span className="text-xl shrink-0">{ev.emoji}</span>}
             <div className="flex-1 min-w-0">
               <p className="font-bold text-navy text-sm truncate">
-                {ev.url
-                  ? <a href={ev.url} target="_blank" rel="noopener noreferrer" className="underline text-info">{ev.title}</a>
-                  : ev.title}
+                {ev.event_type === "staff" ? (
+                  <span className="text-danger">{ev.title}</span>
+                ) : ev.url ? (
+                  <a href={ev.url} target="_blank" rel="noopener noreferrer" className="underline text-info">{ev.title}</a>
+                ) : (
+                  ev.title
+                )}
               </p>
               <p className="text-xs text-navy/40">
                 {ev.schedule_type === "weekly"  ? `毎週${WEEKDAY_JA[ev.weekly_day ?? 0]}曜日` :
