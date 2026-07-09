@@ -178,14 +178,17 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 <span className={`block shrink-0 text-xl font-black leading-tight text-center ${numColor}${isToday ? " underline decoration-2" : ""}`}>
                   {dd}
                 </span>
-                {/* インジケーター — 来店・予約・誕生日・スタッフ休みのみ（一般イベント・祝日バッジは表示しない） */}
+                {/* インジケーター — 表示順を固定: 1.来店 2.予約 3.スタッフ休み 4.誕生日
+                    （スタッフ休みや誕生日があっても、来店表示が下へ押し出されないようにする） */}
                 <div className="flex flex-col items-center gap-0.5 mt-0.5">
-                  {hasStaffClose && <span className="text-xs font-black text-danger leading-none">休</span>}
-                  {hasStaff     && day.staffEvents.slice(0,2).map(s => (
-                    <span key={s.id} className="text-sm leading-none">{s.emoji}</span>
-                  ))}
                   {hasVisit     && <span className="text-xs font-black text-success leading-none">来{day.visits.length}</span>}
                   {hasRes       && <span className="text-xs font-black text-info leading-none">予{day.reservations.length}</span>}
+                  {hasStaffClose && <span className="text-xs font-black text-danger leading-none">休</span>}
+                  {hasStaff     && day.staffEvents.slice(0,2).map(s => (
+                    <span key={s.id} className="text-[11px] leading-none whitespace-nowrap">
+                      {s.emoji}<span className="text-danger font-black">休</span>
+                    </span>
+                  ))}
                   {hasBirthday  && <span className="text-sm leading-none">🎂</span>}
                   {!hasContent  && <span className="text-[9px] text-navy/15 leading-none">–</span>}
                 </div>
@@ -232,6 +235,16 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
               </ul>
             </div>
           )}
+
+          {/* 選択中の日付だけの売上合計（無効化された来店は集計から除外済み、金額未入力は0円扱い） */}
+          <div className="mb-4 flex items-center justify-between rounded-app bg-navy/5 px-4 py-3">
+            <p className="text-sm font-bold text-navy/60">
+              {selectedDate?.replace(/-/g,"/")} の売上合計
+            </p>
+            <p className="text-xl font-black text-navy">
+              {yen(selectedDay.visits.reduce((sum, v) => sum + (v.amount || 0), 0))}
+            </p>
+          </div>
 
           {/* 予約 */}
           {selectedDay.reservations.length > 0 && (

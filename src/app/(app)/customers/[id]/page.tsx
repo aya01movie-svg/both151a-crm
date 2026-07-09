@@ -13,7 +13,6 @@ import { ChampagneAddForm } from "@/components/customers/ChampagneAddForm";
 import { NoteForm } from "@/components/customers/NoteForm";
 import { CautionToggle } from "@/components/customers/CautionToggle";
 import { InvalidateNoteButton } from "@/components/customers/InvalidateNoteButton";
-import { HideCustomerButton } from "@/components/customers/HideCustomerButton";
 import { CustomerTimeline } from "@/components/customers/CustomerTimeline";
 import { daysSince, formatDate, formatDateTime, yen } from "@/lib/date";
 import { computePace } from "@/lib/pace";
@@ -106,7 +105,6 @@ export default async function CustomerDetailPage({
             <a href={`/customers/${customer.id}/edit`} className="text-xs text-info underline">
               編集
             </a>
-            <HideCustomerButton customerId={customer.id} hidden={customer.hidden} />
           </div>
           <div className="flex items-center gap-2 mb-4">
             {profile.role === "admin" ? (

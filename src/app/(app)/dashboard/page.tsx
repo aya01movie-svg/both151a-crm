@@ -33,11 +33,6 @@ export default async function DashboardPage({
     q ? listCustomers({ search: q, page: 0 }) : Promise.resolve(null),
   ]);
 
-  const todayVisits = calData.days[todayJst]?.visits ?? [];
-
-  // 本日の売上合計（来店済み分）
-  const todayTotal = todayVisits.reduce((sum, v) => sum + v.amount, 0);
-
   return (
     <>
       {/* 日付表示はヘッダー（TOPバナー直下）の1箇所のみとし、ここでは表示しない */}
@@ -119,15 +114,13 @@ export default async function DashboardPage({
       )}
 
       {/* ── カレンダー ─────────────────────── */}
+      {/* 「本日の売上合計」は、選択中の日付に連動する形でカレンダー内
+          （選択日の詳細パネル）に表示するよう変更した。以前はここに固定で
+          「今日」の合計だけを表示していたため、月を切り替えると0円になったり、
+          カレンダーで選んだ日と表示金額が一致しないという不具合があったため。 */}
       <div className="mb-4">
         <CalendarClient data={calData} />
       </div>
-
-      {/* ── 本日の売上合計（「本日の記録」枠は廃止） ─────── */}
-      <Card className="text-center py-4">
-        <p className="text-sm font-bold text-navy/50 mb-1">本日の売上合計</p>
-        <p className="text-3xl font-black text-navy">{yen(todayTotal)}</p>
-      </Card>
     </>
   );
 }

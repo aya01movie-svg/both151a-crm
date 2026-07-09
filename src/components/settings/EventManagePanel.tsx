@@ -127,8 +127,9 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
           {STAFF_EMOJIS.map((s) => (
             <button key={s.emoji} type="button" disabled={pending}
               onClick={() => quickStaffOff(s.emoji, s.label)}
-              className="px-3 py-2 rounded-app border-2 border-navy/10 bg-white text-base font-bold hover:bg-navy/5 disabled:opacity-40">
-              {s.emoji}休（{s.label}）
+              className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-app border-2 border-navy/10 bg-white hover:bg-navy/5 disabled:opacity-40">
+              <span className="text-xl leading-none">{s.emoji}<span className="text-danger font-black text-base">休</span></span>
+              <span className="text-[10px] text-navy/40">{s.label}</span>
             </button>
           ))}
         </div>
@@ -278,7 +279,6 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
                  ev.schedule_type === "annual"  ? `毎年${ev.annual_month}/${ev.annual_day}` :
                  ev.schedule_type === "range"   ? `${ev.start_date}〜${ev.end_date}` :
                  ev.start_date || ""}
-                {ev.event_type === "staff" && " ・スタッフ休み"}
               </p>
             </div>
             <div className="flex gap-1.5 shrink-0">

@@ -8,6 +8,28 @@ export type ClosedDay = Pick<ClosedDayRow, "id" | "date" | "note">;
 export type Holiday = Pick<HolidayRow, "date" | "name">;
 
 /** 全アクティブイベントを取得 */
+const STAFF_ANIMAL_EMOJIS = ["🐑", "🐯", "🐰"];
+
+/**
+ * v1.2修正: 過去に登録されたイベントの表示を、現在の仕様（🐑休 形式・絵文字自動付与なし）
+ * へ「表示側」で正規化する。DBの値そのものは変更しない（SQL不要）。
+ * - スタッフ休みイベント: 絵文字は動物のみ（🚫等の付加や複数文字が残っていても先頭の
+ *   動物1文字だけを使う）、タイトルは常に「休」固定（過去の「スタッフAお休み」等の
+ *   文言が残っていても表示しない）。
+ * - 通常イベント: 過去のバグで自動付与されてしまった📅は空扱いにする
+ *   （📅はユーザーが選べるUIが存在したことがないため、100%自動付与によるものと判断できる）。
+ */
+function normalizeEvent(ev: StoreEvent): StoreEvent {
+  if (ev.event_type === "staff") {
+    const animal = STAFF_ANIMAL_EMOJIS.find((a) => ev.emoji?.startsWith(a)) ?? ev.emoji ?? "";
+    return { ...ev, emoji: animal, title: "休" };
+  }
+  if (ev.emoji === "📅") {
+    return { ...ev, emoji: "" };
+  }
+  return ev;
+}
+
 export async function listStoreEvents(): Promise<StoreEvent[]> {
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +38,7 @@ export async function listStoreEvents(): Promise<StoreEvent[]> {
     .select("*")
     .eq("is_active", true)
     .order("created_at", { ascending: false });
-  return (data ?? []) as StoreEvent[];
+  return ((data ?? []) as StoreEvent[]).map(normalizeEvent);
 }
 
 /** 店休日一覧（from〜to 範囲） */
