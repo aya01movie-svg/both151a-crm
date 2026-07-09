@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { yen } from "@/lib/date";
-import type { CalendarMonthData } from "@/lib/data/calendar";
+import type { CalendarMonthData, YearlyMonthTotal } from "@/lib/data/calendar";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -20,11 +20,19 @@ function calLink(y: number, m: number) {
 
 const YEAR_RANGE_START = 2020;
 
-export function CalendarClient({ data }: { data: CalendarMonthData }) {
+export function CalendarClient({
+  data,
+  yearlyTotals,
+}: {
+  data: CalendarMonthData;
+  /** 表示中の年（data.year）の月別売上合計。1〜12月ぶん常に揃った配列で渡す。 */
+  yearlyTotals?: YearlyMonthTotal[];
+}) {
   const { year, month, days } = data;
   const today    = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const thisYear = today.getFullYear();
+  const thisMonth = today.getMonth() + 1;
 
   const [selectedDate, setSelectedDate] = useState<string | null>(
     year === today.getFullYear() && month === today.getMonth()+1 ? todayStr : null
@@ -47,6 +55,14 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
   }
 
   const selectedDay = selectedDate ? days[selectedDate] : null;
+
+  // ── 月別売上一覧（カレンダー最下部）─────────
+  // 表示中の年（data.year）が実際の「今年」と同じ場合のみ、実際の「今月」を除外する
+  // （今月分はKPIカード「今月売上」で既に表示されているため重複を避ける）。
+  const monthlyTotalsToShow = (yearlyTotals ?? []).filter((t) => {
+    if (year === thisYear && t.month === thisMonth) return false;
+    return true;
+  });
 
   return (
     <div>
@@ -200,7 +216,7 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
 
       {/* ── 選択日の詳細 ─────────────────── */}
       {selectedDay && (
-        <Card>
+        <Card className="mb-4">
           <CardTitle className="text-base mb-3">
             {selectedDate?.replace(/-/g,"/")} の詳細
           </CardTitle>
@@ -314,6 +330,23 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
               </ul>
             </div>
           )}
+        </Card>
+      )}
+
+      {/* ── 月別売上（カレンダー最下部）─────────────
+          表示中の年の1〜12月の売上合計一覧。実際の「今月」は
+          KPIカード「今月売上」と重複するためここでは除外する。 */}
+      {monthlyTotalsToShow.length > 0 && (
+        <Card>
+          <CardTitle className="text-base mb-3">{year}年 月別売上</CardTitle>
+          <ul className="flex flex-col divide-y divide-navy/5">
+            {monthlyTotalsToShow.map((t) => (
+              <li key={t.month} className="flex items-center justify-between py-2.5">
+                <p className="text-sm font-bold text-navy/60">{t.month}月</p>
+                <p className="text-base font-black text-navy">{yen(t.amount)}</p>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
     </div>

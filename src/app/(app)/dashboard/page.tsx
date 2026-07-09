@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/data/dashboard";
-import { getMonthSummary } from "@/lib/data/calendar";
+import { getMonthSummary, getYearlyMonthTotals } from "@/lib/data/calendar";
 import { listCustomers } from "@/lib/data/customers";
 import { Card } from "@/components/ui/Card";
 import { CalendarClient } from "@/components/calendar/CalendarClient";
@@ -27,9 +27,10 @@ export default async function DashboardPage({
   // 検索クエリ
   const q = params.q?.trim() ?? "";
 
-  const [data, calData, searchResult] = await Promise.all([
+  const [data, calData, yearlyTotals, searchResult] = await Promise.all([
     getDashboardData(),
     getMonthSummary(year, month),
+    getYearlyMonthTotals(year),
     q ? listCustomers({ search: q, page: 0 }) : Promise.resolve(null),
   ]);
 
@@ -117,9 +118,10 @@ export default async function DashboardPage({
       {/* 「本日の売上合計」は、選択中の日付に連動する形でカレンダー内
           （選択日の詳細パネル）に表示するよう変更した。以前はここに固定で
           「今日」の合計だけを表示していたため、月を切り替えると0円になったり、
-          カレンダーで選んだ日と表示金額が一致しないという不具合があったため。 */}
+          カレンダーで選んだ日と表示金額が一致しないという不具合があったため。
+          カレンダー最下部には、表示中の年の月別売上一覧（当月除く）を表示する。 */}
       <div className="mb-4">
-        <CalendarClient data={calData} />
+        <CalendarClient data={calData} yearlyTotals={yearlyTotals} />
       </div>
     </>
   );
