@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveStoreEventAction, deleteStoreEventAction } from "@/lib/actions/events";
 import type { StoreEvent } from "@/lib/data/events";
@@ -33,6 +33,11 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState<Partial<StoreEvent> | null>(null);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  // v1.2修正: イベント一覧が長い場合、下の方の項目で「編集」を押すと
+  // フォーム自体はパネル上部に開くが画面外（スクロール外）になり、
+  // 反応していないように見えていた。編集開始時にフォームまで
+  // 自動スクロールするようにする。
+  const formRef = useRef<HTMLDivElement>(null);
 
   const todayStr = (() => {
     const t = new Date();
@@ -44,6 +49,12 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
   function startNew() { setEditing(blank()); setMessage(null); }
   function startEdit(ev: StoreEvent) { setEditing({ ...ev }); setMessage(null); }
   function cancel() { setEditing(null); }
+
+  useEffect(() => {
+    if (editing) {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [editing]);
 
   /** スタッフ休みを選択した日付で登録（未選択時は当日）。表示は「🐑休」の形。 */
   function quickStaffOff(emoji: string, label: string) {
@@ -127,9 +138,9 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
           {STAFF_EMOJIS.map((s) => (
             <button key={s.emoji} type="button" disabled={pending}
               onClick={() => quickStaffOff(s.emoji, s.label)}
-              className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-app border-2 border-navy/10 bg-white hover:bg-navy/5 disabled:opacity-40">
+              title={s.label}
+              className="px-4 py-2.5 rounded-app border-2 border-navy/10 bg-white hover:bg-navy/5 disabled:opacity-40">
               <span className="text-xl leading-none">{s.emoji}<span className="text-danger font-black text-base">休</span></span>
-              <span className="text-[10px] text-navy/40">{s.label}</span>
             </button>
           ))}
         </div>
@@ -137,7 +148,7 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
 
       {/* 新規フォーム */}
       {editing ? (
-        <div className="flex flex-col gap-3 p-4 rounded-app border-2 border-gold/40 bg-gold/5">
+        <div ref={formRef} className="flex flex-col gap-3 p-4 rounded-app border-2 border-gold/40 bg-gold/5">
           {/* タイトル */}
           <div>
             <p className="text-xs font-bold text-navy/50 mb-1">タイトル</p>
