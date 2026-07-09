@@ -117,6 +117,11 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
 
   const schedType = (editing?.schedule_type || "single") as ScheduleType;
 
+  // v1.2修正: 通常イベント（年間を通して全件表示・上限なし）と、
+  // スタッフ休み（過去分も削除せず件数が増えるため、フォルダにまとめる）を分ける。
+  const generalEvents = events.filter((ev) => ev.event_type !== "staff");
+  const staffEvents = events.filter((ev) => ev.event_type === "staff");
+
   return (
     <div className="flex flex-col gap-4">
       {/* メッセージ */}
@@ -270,39 +275,66 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
         </button>
       )}
 
-      {/* 登録済み一覧 */}
+      {/* 登録済み一覧（通常イベント：件数上限なし・全件表示） */}
       <ul className="flex flex-col gap-2">
-        {events.map((ev) => (
-          <li key={ev.id} className="flex items-start gap-2 p-3 rounded-app border border-navy/5 bg-white">
-            {ev.emoji && <span className="text-xl shrink-0">{ev.emoji}</span>}
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-navy text-sm truncate">
-                {ev.event_type === "staff" ? (
-                  <span className="text-danger">{ev.title}</span>
-                ) : ev.url ? (
-                  <a href={ev.url} target="_blank" rel="noopener noreferrer" className="underline text-info">{ev.title}</a>
-                ) : (
-                  ev.title
-                )}
-              </p>
-              <p className="text-xs text-navy/40">
-                {ev.schedule_type === "weekly"  ? `毎週${WEEKDAY_JA[ev.weekly_day ?? 0]}曜日` :
-                 ev.schedule_type === "annual"  ? `毎年${ev.annual_month}/${ev.annual_day}` :
-                 ev.schedule_type === "range"   ? `${ev.start_date}〜${ev.end_date}` :
-                 ev.start_date || ""}
-              </p>
-            </div>
-            <div className="flex gap-1.5 shrink-0">
-              <button type="button" onClick={() => startEdit(ev)} className="text-xs text-navy/50 underline">編集</button>
-              <button type="button" onClick={() => remove(ev.id, ev.title)} disabled={pending}
-                className="text-xs text-danger underline disabled:opacity-40">削除</button>
-            </div>
-          </li>
+        {generalEvents.map((ev) => (
+          <EventListItem key={ev.id} ev={ev} onEdit={startEdit} onRemove={remove} pending={pending} />
         ))}
-        {events.length === 0 && (
+        {generalEvents.length === 0 && (
           <p className="text-navy/30 text-sm">まだイベントが登録されていません。</p>
         )}
       </ul>
+
+      {/* スタッフ休み一覧（過去分も削除しないため、フォルダにまとめて格納） */}
+      {staffEvents.length > 0 && (
+        <details className="rounded-app border border-navy/10 bg-navy/[0.02]">
+          <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-bold text-navy/60 flex items-center gap-1.5">
+            📁 スタッフ休み一覧（{staffEvents.length}件）
+          </summary>
+          <ul className="flex flex-col gap-2 p-3 pt-0">
+            {staffEvents.map((ev) => (
+              <EventListItem key={ev.id} ev={ev} onEdit={startEdit} onRemove={remove} pending={pending} />
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
+  );
+}
+
+function EventListItem({
+  ev, onEdit, onRemove, pending,
+}: {
+  ev: StoreEvent;
+  onEdit: (ev: StoreEvent) => void;
+  onRemove: (id: string, title: string) => void;
+  pending: boolean;
+}) {
+  return (
+    <li className="flex items-start gap-2 p-3 rounded-app border border-navy/5 bg-white">
+      {ev.emoji && <span className="text-xl shrink-0">{ev.emoji}</span>}
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-navy text-sm truncate">
+          {ev.event_type === "staff" ? (
+            <span className="text-danger">{ev.title}</span>
+          ) : ev.url ? (
+            <a href={ev.url} target="_blank" rel="noopener noreferrer" className="underline text-info">{ev.title}</a>
+          ) : (
+            ev.title
+          )}
+        </p>
+        <p className="text-xs text-navy/40">
+          {ev.schedule_type === "weekly"  ? `毎週${WEEKDAY_JA[ev.weekly_day ?? 0]}曜日` :
+           ev.schedule_type === "annual"  ? `毎年${ev.annual_month}/${ev.annual_day}` :
+           ev.schedule_type === "range"   ? `${ev.start_date}〜${ev.end_date}` :
+           ev.start_date || ""}
+        </p>
+      </div>
+      <div className="flex gap-1.5 shrink-0">
+        <button type="button" onClick={() => onEdit(ev)} className="text-xs text-navy/50 underline">編集</button>
+        <button type="button" onClick={() => onRemove(ev.id, ev.title)} disabled={pending}
+          className="text-xs text-danger underline disabled:opacity-40">削除</button>
+      </div>
+    </li>
   );
 }
