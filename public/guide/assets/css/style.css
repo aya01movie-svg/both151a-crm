@@ -1,0 +1,303 @@
+/* MATTY 使い方ガイド 共通スタイル
+   Android 7.0 (dtab Compact d-01J) の古い WebView / Chrome でも
+   崩れずに表示できるよう、シンプルな CSS のみで構成しています。
+   Flexbox 中心、CSS Grid 不使用、外部フォント不使用。 */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Meiryo", sans-serif;
+  background: #fbf3e3;
+  color: #22304a;
+  font-size: 18px;
+  line-height: 1.8;
+  -webkit-text-size-adjust: 100%;
+}
+
+a { color: #1f6fb2; }
+a:hover, a:active { color: #14507f; }
+
+img { max-width: 100%; height: auto; display: block; }
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+/* ヘッダー */
+.top-bar {
+  background: #f6cd3c;
+  padding: 14px 16px;
+  border-bottom: 4px solid #e2b326;
+}
+.top-bar-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.brand {
+  font-size: 20px;
+  font-weight: bold;
+  color: #22304a;
+  text-decoration: none;
+}
+.home-link {
+  display: inline-block;
+  background: #22304a;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 15px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  min-height: 44px;
+  line-height: 24px;
+}
+.home-link:hover, .home-link:active { background: #14203a; color: #fff; }
+
+/* ページ見出し */
+.page-head {
+  padding: 22px 0 8px;
+}
+.page-badge {
+  display: inline-block;
+  background: #e7edf7;
+  color: #22304a;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+h1 {
+  font-size: 26px;
+  margin: 4px 0 6px;
+  color: #22304a;
+}
+.lead {
+  font-size: 17px;
+  color: #4b5a75;
+  margin: 0 0 8px;
+}
+
+/* カード */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: 0 2px 0 rgba(34,48,74,0.08);
+  border: 1px solid #eee1c4;
+}
+.card h2 {
+  font-size: 21px;
+  margin: 0 0 10px;
+  color: #22304a;
+}
+.card h3 {
+  font-size: 18px;
+  margin: 18px 0 8px;
+  color: #22304a;
+}
+.step-card {
+  background: #fffdf6;
+  border: 2px solid #f3e2ab;
+  border-radius: 16px;
+  padding: 18px;
+  margin: 14px 0;
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #22304a;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.step-title {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+.step-text { margin: 0; }
+.step-text.small { font-size: 15px; color: #5a6784; }
+
+/* screenshot 説明画像 */
+.shot {
+  border-radius: 14px;
+  border: 3px solid #22304a;
+  margin: 10px 0;
+  overflow: hidden;
+  max-width: 320px;
+}
+.shot img { width: 100%; }
+.shot-cap {
+  font-size: 14px;
+  color: #5a6784;
+  margin: -4px 0 14px;
+}
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #d43b3b;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 15px;
+}
+
+/* ボタン風の説明チップ */
+.btn-sample {
+  display: inline-block;
+  background: #22304a;
+  color: #fff;
+  font-weight: bold;
+  font-size: 15px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin: 2px 4px 2px 0;
+}
+.btn-sample.gold { background: #d9a536; color: #22304a; }
+.btn-sample.outline { background: #fff; color: #22304a; border: 2px solid #22304a; }
+.btn-sample.danger { background: #c33a3a; color: #fff; }
+
+/* 注意ボックス */
+.note {
+  background: #fff6e0;
+  border: 2px solid #f0d383;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 14px 0;
+  font-size: 16px;
+}
+.note.warn { background: #fdecec; border-color: #eeb3b3; }
+.note strong { color: #a6371f; }
+
+/* やりたいこと カード（トップページ） */
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.goal-card {
+  display: block;
+  background: #fff;
+  border: 2px solid #eee1c4;
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: #22304a;
+}
+.goal-card:hover, .goal-card:active { border-color: #d9a536; }
+.goal-card .q {
+  font-size: 18px;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 4px;
+}
+.goal-card .a {
+  font-size: 15px;
+  color: #5a6784;
+}
+
+/* 目次ページ用リスト */
+.toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.toc-list a {
+  display: block;
+  background: #fff;
+  border: 1px solid #eee1c4;
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: #22304a;
+  font-weight: bold;
+}
+.toc-list a:hover, .toc-list a:active { border-color: #d9a536; }
+.toc-num { color: #b98a1a; margin-right: 6px; }
+
+/* ページ送り */
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 30px 0 10px;
+  flex-wrap: wrap;
+}
+.pager a {
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+  background: #22304a;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 16px 10px;
+  border-radius: 12px;
+  min-height: 44px;
+}
+.pager a.secondary {
+  background: #fff;
+  color: #22304a;
+  border: 2px solid #22304a;
+}
+.pager a:hover, .pager a:active { opacity: 0.85; }
+
+/* チェックリスト */
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #eee1c4;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.check-item input[type="checkbox"] {
+  width: 28px;
+  height: 28px;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+}
+.check-item label { font-size: 17px; }
+
+/* フッター */
+.site-footer {
+  text-align: center;
+  color: #8a7a52;
+  font-size: 13px;
+  padding: 20px 0 30px;
+}
+
+/* 印刷対応 */
+@media print {
+  .top-bar, .pager, .no-print { display: none !important; }
+  body { background: #fff; color: #000; font-size: 13pt; }
+  .card, .step-card { border: 1px solid #999; box-shadow: none; page-break-inside: avoid; }
+  a { color: #000; text-decoration: underline; }
+  .shot { border-color: #000; }
+}
+
+/* 横スクロール防止 */
+.wrap, .card, .step-card { max-width: 100%; }
