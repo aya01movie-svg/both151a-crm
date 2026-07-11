@@ -2,6 +2,7 @@ import Image from "next/image";
 import { logout } from "@/lib/auth/actions";
 import { toJstDateString } from "@/lib/date";
 import { PageTitle } from "./PageTitle";
+import { HelpGuideButton } from "@/components/guide/HelpGuideButton";
 
 type HeaderProps = {
   staffName: string;
@@ -26,6 +27,9 @@ function formatDateBar(isoDateStr: string): string {
 /**
  * 画面上部の共通ヘッダー。
  * 背景透過版MATTYアイコン + ヘッダー下に本日の日付バーを表示。
+ * v1.4追加: 「❔使い方」ボタン（HelpGuideButton）をログアウトボタンの手前に配置。
+ * ログイン後の全主要画面はこのHeaderを共通で描画するため、各ページへの
+ * 個別追加は不要（画面ごとの対応ガイドは src/lib/guide/guide-links.ts で一元管理）。
  */
 export function Header({ staffName }: HeaderProps) {
   const todayStr = toJstDateString(new Date().toISOString());
@@ -47,17 +51,23 @@ export function Header({ staffName }: HeaderProps) {
           <span className="font-black text-xl tracking-tight shrink-0">MATTY</span>
           <PageTitle />
         </div>
-        <form action={logout} className="flex items-center gap-3 shrink-0">
-          <span className="text-sm text-navy-dark/70 hidden sm:inline">
-            {staffName}
-          </span>
-          <button
-            type="submit"
-            className="text-sm font-bold text-navy-dark border border-navy-dark/30 rounded-app px-3 py-2 hover:bg-black/5"
-          >
-            ログアウト
-          </button>
-        </form>
+
+        {/* 右側: ❔使い方（v1.4追加）→ スタッフ名 → ログアウト の順 */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <HelpGuideButton variant="header" label="使い方" ariaLabel="MATTYの使い方ガイドを開く" />
+
+          <form action={logout} className="flex items-center gap-3 shrink-0">
+            <span className="text-sm text-navy-dark/70 hidden sm:inline">
+              {staffName}
+            </span>
+            <button
+              type="submit"
+              className="text-sm font-bold text-navy-dark border border-navy-dark/30 rounded-app px-3 py-2 hover:bg-black/5"
+            >
+              ログアウト
+            </button>
+          </form>
+        </div>
       </header>
 
       {/* 日付バー: 背景なし・文字のみ */}

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveStoreEventAction, deleteStoreEventAction } from "@/lib/actions/events";
 import type { StoreEvent } from "@/lib/data/events";
+import { HelpGuideButton } from "@/components/guide/HelpGuideButton";
+import { GUIDE_URLS } from "@/lib/guide/guide-links";
 
 const WEEKDAY_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -193,7 +195,16 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
 
       {/* スタッフ休みクイックボタン（日付選択対応） */}
       <div>
-        <p className="text-xs font-bold text-navy/50 mb-2">スタッフ休みを登録</p>
+        {/* v1.4追加: 「❔休み登録の使い方」ボタン（12-staff-off.html を直接開く） */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="text-xs font-bold text-navy/50">スタッフ休みを登録</p>
+          <HelpGuideButton
+            variant="inline"
+            guideUrl={GUIDE_URLS.staffOff}
+            label="休み登録の使い方"
+            ariaLabel="スタッフの休みを登録する方法のガイドを開く"
+          />
+        </div>
         <div className="mb-2">
           <input type="date" value={staffOffDate}
             onChange={(e) => setStaffOffDate(e.target.value)}
@@ -329,10 +340,19 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
           </div>
         </div>
       ) : (
-        <button type="button" onClick={startNew}
-          className="min-h-12 rounded-app border-2 border-dashed border-navy/20 text-navy/50 text-sm font-bold hover:bg-navy/5">
-          ＋ 新しいイベントを追加
-        </button>
+        // v1.4追加: 「❔イベント登録の使い方」ボタン（18-event.html を直接開く）
+        <div className="flex items-center gap-2 flex-wrap">
+          <button type="button" onClick={startNew}
+            className="flex-1 min-h-12 rounded-app border-2 border-dashed border-navy/20 text-navy/50 text-sm font-bold hover:bg-navy/5">
+            ＋ 新しいイベントを追加
+          </button>
+          <HelpGuideButton
+            variant="inline"
+            guideUrl={GUIDE_URLS.eventGeneral}
+            label="イベント登録の使い方"
+            ariaLabel="通常イベントを登録する方法のガイドを開く"
+          />
+        </div>
       )}
 
       {/* ══════════════════════════════════════════════════
@@ -397,10 +417,19 @@ export function EventManagePanel({ events }: { events: StoreEvent[] }) {
           </div>
         </div>
       ) : (
-        <button type="button" onClick={startCalNew}
-          className="min-h-12 rounded-app border-2 border-dashed border-info/40 text-info text-sm font-bold hover:bg-info/5">
-          ＋カレンダーに反映させたいイベント
-        </button>
+        // v1.4追加: 「❔カレンダーイベントの使い方」ボタン（19-calendar-event.html を直接開く）
+        <div className="flex items-center gap-2 flex-wrap">
+          <button type="button" onClick={startCalNew}
+            className="flex-1 min-h-12 rounded-app border-2 border-dashed border-info/40 text-info text-sm font-bold hover:bg-info/5">
+            ＋カレンダーに反映させたいイベント
+          </button>
+          <HelpGuideButton
+            variant="inline"
+            guideUrl={GUIDE_URLS.eventCalendar}
+            label="カレンダーイベントの使い方"
+            ariaLabel="カレンダーに反映させたいイベントを登録する方法のガイドを開く"
+          />
+        </div>
       )}
 
       {/* カレンダー反映イベント一覧（上限なし・全件表示） */}
