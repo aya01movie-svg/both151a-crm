@@ -300,7 +300,7 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
               マス目には絵文字のみ表示し、ここでタイトル全文とメモを表示する。 */}
           {selectedDay.calendarEvents.length > 0 && (
             <div className="mb-4">
-              <p className="text-xs font-black text-gold mb-2">📅 予定</p>
+              <p className="text-xs font-black text-[#8a6d00] mb-2">📅 予定</p>
               <ul className="flex flex-col gap-2">
                 {selectedDay.calendarEvents.map((ce) => (
                   <li key={ce.id} className="rounded-app border border-gold/30 bg-gold/5 px-4 py-3">
