@@ -95,19 +95,27 @@ export default async function NoticePage() {
   }
 
   // ── 店イベント（当日のみ表示）────────────
+  // ・1日イベント（single）／毎年（annual）／毎週（weekly）が本日該当の場合は
+  //   「日付　本日」を横並びで表示する
+  // ・期間イベント（range）は開催期間中（開始日以上・終了日以下）は
+  //   「本日」ではなく登録された開始日〜終了日＋「開催中」を表示する
+  //   （終了日当日まで「開催中」表示を継続）
   for (const ev of events) {
     if (ev.event_type === "staff") continue;
     if (ev.schedule_type === "single" && ev.start_date) {
       if (dayDiff(ev.start_date) !== 0) continue;
+      rows.push({ key:`store-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle:`${dateLabel(ev.start_date)}　本日`, url: ev.url, bg:"bg-[#e8f4ff]" });
     } else if (ev.schedule_type === "range" && ev.start_date && ev.end_date) {
       if (dayDiff(ev.start_date) > 0 || dayDiff(ev.end_date) < 0) continue;
+      rows.push({ key:`store-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle:`${dateLabel(ev.start_date)}〜${dateLabel(ev.end_date)}　開催中`, url: ev.url, bg:"bg-[#e8f4ff]" });
     } else if (ev.schedule_type === "annual" && ev.annual_month && ev.annual_day) {
       const ds = `${now.getFullYear()}-${pad(ev.annual_month)}-${pad(ev.annual_day)}`;
       if (dayDiff(ds) !== 0) continue;
+      rows.push({ key:`store-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle:`${dateLabel(ds)}　本日`, url: ev.url, bg:"bg-[#e8f4ff]" });
     } else if (ev.schedule_type === "weekly" && ev.weekly_day !== null) {
       if (todayDow !== ev.weekly_day) continue;
-    } else continue;
-    rows.push({ key:`store-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle:"本日", url: ev.url, bg:"bg-[#e8f4ff]" });
+      rows.push({ key:`store-${ev.id}`, emoji: ev.emoji, title: ev.title, subtitle:`${dateLabel(todayJst)}　本日`, url: ev.url, bg:"bg-[#e8f4ff]" });
+    }
   }
 
   // ── 入力イベント（週から表示 = 7日以内）────
