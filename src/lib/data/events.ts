@@ -71,15 +71,18 @@ export async function listHolidays(from: string, to: string): Promise<Holiday[]>
  * 指定月のイベント表示データを計算する。
  * weekly / annual / single / range それぞれについて、
  * 指定月のどの日付に表示すべきかを返す。
+ *
+ * v1.3修正: 「カレンダーに反映させたいイベント」機能追加に伴い、
+ * 選択日の詳細パネルでメモを表示できるよう、返却データに memo を追加。
  */
 export function resolveEventDatesForMonth(
   events: StoreEvent[],
   year: number,
   month: number
-): Map<string, { title: string; emoji: string; event_type: string; id: string; url?: string | null }[]> {
-  const result = new Map<string, { title: string; emoji: string; event_type: string; id: string; url?: string | null }[]>();
+): Map<string, { title: string; emoji: string; event_type: string; id: string; url?: string | null; memo?: string | null }[]> {
+  const result = new Map<string, { title: string; emoji: string; event_type: string; id: string; url?: string | null; memo?: string | null }[]>();
 
-  function push(dateStr: string, entry: { title: string; emoji: string; event_type: string; id: string; url?: string | null }) {
+  function push(dateStr: string, entry: { title: string; emoji: string; event_type: string; id: string; url?: string | null; memo?: string | null }) {
     const list = result.get(dateStr) ?? [];
     list.push(entry);
     result.set(dateStr, list);
@@ -89,7 +92,7 @@ export function resolveEventDatesForMonth(
   const pad = (n: number) => String(n).padStart(2, "0");
 
   for (const ev of events) {
-    const entry = { title: ev.title, emoji: ev.emoji, event_type: ev.event_type, id: ev.id, url: ev.url };
+    const entry = { title: ev.title, emoji: ev.emoji, event_type: ev.event_type, id: ev.id, url: ev.url, memo: ev.memo };
 
     if (ev.schedule_type === "weekly" && ev.weekly_day !== null) {
       // 今月の指定曜日をすべて列挙

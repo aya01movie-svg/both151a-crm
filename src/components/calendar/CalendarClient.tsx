@@ -157,15 +157,18 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
               ? "border-danger/20 bg-[#fff0f0]"
               : "border-navy/5 bg-white";
 
-            // カレンダーに表示するのは: 来店・予約・誕生日・店休日・祝日のみ
-            // 一般イベントは表示しない
+            // カレンダーに表示するのは: 来店・予約・誕生日・店休日・祝日・カレンダー反映イベントのみ
+            // （event_type==="other" の一般イベントは表示しない。お知らせページ側で扱う）
             const hasVisit      = (day?.visits.length ?? 0) > 0;
             const hasRes        = (day?.reservations.length ?? 0) > 0;
             const hasBirthday   = (day?.birthdays.length ?? 0) > 0;
             const hasStaffClose = day?.isClosedDay;
             const hasHoliday    = day?.isHoliday && !day.isClosedDay;
             const hasStaff      = (day?.staffEvents.length ?? 0) > 0;
-            const hasContent    = hasVisit || hasRes || hasBirthday || hasStaffClose || hasHoliday || hasStaff;
+            // v1.3追加: 設定ページ「＋カレンダーに反映させたいイベント」経由の登録分。
+            // 件数上限なし（全件の絵文字を表示。折り返し表示でマスの高さは可変）。
+            const hasCalEvents  = (day?.calendarEvents.length ?? 0) > 0;
+            const hasContent    = hasVisit || hasRes || hasBirthday || hasStaffClose || hasHoliday || hasStaff || hasCalEvents;
 
             return (
               <button key={dateStr} type="button"
@@ -178,7 +181,7 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                 <span className={`block shrink-0 text-xl font-black leading-tight text-center ${numColor}${isToday ? " underline decoration-2" : ""}`}>
                   {dd}
                 </span>
-                {/* インジケーター — 表示順を固定: 1.来店 2.予約 3.スタッフ休み 4.誕生日
+                {/* インジケーター — 表示順を固定: 1.来店 2.予約 3.スタッフ休み 4.誕生日 5.カレンダー反映イベント
                     （スタッフ休みや誕生日があっても、来店表示が下へ押し出されないようにする） */}
                 <div className="flex flex-col items-center gap-0.5 mt-0.5">
                   {hasVisit     && <span className="text-xs font-black text-success leading-none">来{day.visits.length}</span>}
@@ -190,6 +193,13 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                     </span>
                   ))}
                   {hasBirthday  && <span className="text-sm leading-none">🎂</span>}
+                  {hasCalEvents && (
+                    <div className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-0.5 max-w-full">
+                      {day.calendarEvents.map((ce) => (
+                        <span key={ce.id} className="text-sm leading-none">{ce.emoji || "📌"}</span>
+                      ))}
+                    </div>
+                  )}
                   {!hasContent  && <span className="text-[9px] text-navy/15 leading-none">–</span>}
                 </div>
               </button>
@@ -280,6 +290,31 @@ export function CalendarClient({ data }: { data: CalendarMonthData }) {
                     🎂 <Link href={`/customers/${b.customerId}`} className="underline decoration-[#7a4fa3]/30 hover:decoration-[#7a4fa3]">
                       {b.customerName}
                     </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* v1.3追加: カレンダーに反映させたいイベント（設定ページから登録）。
+              マス目には絵文字のみ表示し、ここでタイトル全文とメモを表示する。 */}
+          {selectedDay.calendarEvents.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-black text-gold mb-2">📅 予定</p>
+              <ul className="flex flex-col gap-2">
+                {selectedDay.calendarEvents.map((ce) => (
+                  <li key={ce.id} className="rounded-app border border-gold/30 bg-gold/5 px-4 py-3">
+                    <p className="font-black text-navy text-base flex items-center gap-1.5">
+                      {ce.emoji && <span>{ce.emoji}</span>}
+                      {ce.url ? (
+                        <a href={ce.url} target="_blank" rel="noopener noreferrer" className="underline text-info">{ce.title}</a>
+                      ) : (
+                        <span>{ce.title}</span>
+                      )}
+                    </p>
+                    {ce.memo && (
+                      <p className="text-sm text-navy/50 mt-1 whitespace-pre-wrap">{ce.memo}</p>
+                    )}
                   </li>
                 ))}
               </ul>

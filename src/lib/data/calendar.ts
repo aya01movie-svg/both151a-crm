@@ -35,15 +35,29 @@ export type CalendarBottleEntry = {
   bottleLabel: string;
 };
 
+/** v1.3追加: 設定ページ「＋カレンダーに反映させたいイベント」から登録されたイベント。
+ *  event_type === "calendar" のものだけがここに入る（従来の一般イベント・
+ *  スタッフ休みとは別枠で管理する）。 */
+export type CalendarReflectedEventEntry = {
+  id: string;
+  title: string;
+  emoji: string;
+  memo?: string | null;
+  url?: string | null;
+};
+
 export type CalendarDayData = {
   date: string; // YYYY-MM-DD
   visits: CalendarVisitEntry[];
   reservations: CalendarReservationEntry[];
   birthdays: CalendarBirthdayEntry[];
-  /** store/local/convention/sport/other タイプのイベント（staff は別フラグ） */
+  /** store/local/convention/sport/other タイプのイベント（staff・calendar は別フラグ） */
   events: { id: string; title: string; emoji: string; event_type: string; url?: string | null }[];
   /** スタッフ欠席イベント（event_type === "staff"） */
   staffEvents: { id: string; title: string; emoji: string; url?: string | null }[];
+  /** v1.3追加: カレンダーに反映させたいイベント（event_type === "calendar"）。
+   *  マス目には emoji のみ、選択日の詳細パネルには title（全文）・memo を表示する。 */
+  calendarEvents: CalendarReflectedEventEntry[];
   isHoliday: boolean;
   holidayName: string | null;
   isClosedDay: boolean;
@@ -72,6 +86,7 @@ function emptyDay(date: string): CalendarDayData {
     birthdays: [],
     events: [],
     staffEvents: [],
+    calendarEvents: [],
     isHoliday: false,
     holidayName: null,
     isClosedDay: false,
@@ -268,6 +283,10 @@ export async function getMonthSummary(year: number, month: number): Promise<Cale
     for (const ev of evList) {
       if (ev.event_type === "staff") {
         day.staffEvents.push({ id: ev.id, title: ev.title, emoji: ev.emoji, url: ev.url });
+      } else if (ev.event_type === "calendar") {
+        // v1.3追加: 設定ページ「＋カレンダーに反映させたいイベント」経由の登録分。
+        // カレンダー本体（グリッド＋選択日の詳細）に反映する。
+        day.calendarEvents.push({ id: ev.id, title: ev.title, emoji: ev.emoji, memo: ev.memo, url: ev.url });
       } else {
         day.events.push(ev);
       }
